@@ -1,0 +1,22 @@
+base:
+  oc: ["Your OC meets their future self.", "Your OC has to return something they borrowed years ago.", "Your OC wakes up with a tiny, unexplained new ability."]
+  fanart: ["Draw a favorite character in a place they would never choose to visit.", "Illustrate a character after they have been caught doing something embarrassing."]
+  fanfiction: ["Write the first conversation after two characters have not spoken for years.", "Write a scene where a familiar place feels suddenly unfamiliar."]
+  writing: ["Write about a letter that arrives at exactly the wrong time.", "Write a scene where someone recognizes a voice before they recognize a face."]
+  relationship: ["Two characters have to share one room for one night.", "Your ship makes a bet neither of them expects to lose."]
+  worldbuilding: ["Invent a rule everyone follows but nobody remembers learning.", "Create a small business with a very strange specialty."]
+  au: ["Put your cast in a job they are hilariously unqualified for.", "Make an AU where magic is mostly used for boring chores."]
+  funny: ["Your character tries to be mysterious and fails immediately.", "A very serious plan is ruined by a very small animal."]
+  challenge: ["Create a scene around one object you can see right now.", "Make something using a color you do not usually choose."]
+constraints:
+  - It happens in a convenience store.
+  - It is raining outside.
+  - Nobody is allowed to explain what is going on.
+  - There is only ten minutes left.
+  - Someone is holding a drink they do not like.
+bonuses:
+  - Neither of them recognizes the other.
+  - A stranger knows more than they should.
+  - The background is suspiciously cheerful.
+  - It ends with an unanswered question.
+  - A pet has the final word.

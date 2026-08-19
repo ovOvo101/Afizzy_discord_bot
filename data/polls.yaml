@@ -1,0 +1,121 @@
+- id: modern-job
+  title: OC in the city
+  question: If your OC landed in modern life, what job would they accidentally be great at?
+  options: [Coffee shop owner, Librarian, Tattoo artist, Game streamer, Completely unemployed]
+- id: travel-planner
+  title: Travel plans
+  question: When a ship travels together, who makes the itinerary?
+  options: [Person A, Person B, Neither of them, One plans and one ruins it]
+- id: creator-medium
+  title: Make something
+  question: What kind of creative work feels most satisfying today?
+  options: [Drawing, Writing, Photography, Cosplay, Crafting]
+- id: cat-oc
+  title: Cat behavior
+  question: If your OC became a cat, what would they do first?
+  options: [Knock something over, Find the sunniest spot, Demand snacks, Start a tiny war]
+- id: rainy-day
+  title: Rainy scene
+  question: In a rainy-day scene, what is the essential prop?
+  options: [One umbrella, Warm drink, Dramatic window, Wet shoes]
+- id: side-character
+  title: Supporting cast
+  question: Which side character secretly has the best story?
+  options: [The rival, The shopkeeper, The mysterious neighbor, The pet]
+- id: outfit-choice
+  title: Wardrobe emergency
+  question: Your OC must attend a formal event. What goes wrong first?
+  options: [Wrong outfit, Wrong invitation, Wrong date, Wrong building]
+- id: world-secret
+  title: Worldbuilding detail
+  question: What makes a fictional world feel alive fastest?
+  options: [Local food, Strange holidays, Tiny superstitions, Bad public transport]
+- id: meet-cute
+  title: A meeting
+  question: Best place for characters to meet by accident?
+  options: [Convenience store, Library, Train platform, Friend's party]
+- id: villain-break
+  title: Villain time off
+  question: What does a villain do on their day off?
+  options: [Gardens, Does taxes, Watches reality TV, Plans something petty]
+- id: familiar
+  title: Magical companion
+  question: Pick an inconvenient magical familiar.
+  options: [Judgmental crow, Tiny dragon, Ghost cat, Frog with secrets]
+- id: fake-date
+  title: Fake dating rules
+  question: In a fake dating story, who catches feelings first?
+  options: [The planner, The cynic, Both at once, Everyone except them]
+- id: snack
+  title: Character snack
+  question: Which snack says the most about a character?
+  options: [Convenience-store drink, Fancy pastry, Mystery candy, Instant noodles]
+- id: late-message
+  title: 3 AM notification
+  question: A character gets a message at 3 AM. It is from...
+  options: [Their future self, An ex, A stranger, Their pet somehow]
+- id: childhood
+  title: Childhood photo
+  question: What would embarrass your OC most in an old photo?
+  options: [Haircut, Outfit, Hobby, Serious expression]
+- id: powers
+  title: Useless superpower
+  question: Choose a mildly useful superpower.
+  options: [Always know the time, Warm cold tea, Find lost pens, Speak to pigeons]
+- id: coffee-shop
+  title: Coffee shop AU
+  question: Who is most likely to burn the coffee shop down?
+  options: [The owner, The new hire, The regular, The cat]
+- id: apology
+  title: Saying sorry
+  question: How does your character apologize after being dramatic?
+  options: [Gift, Long speech, Awkward silence, Pretends nothing happened]
+- id: treasure
+  title: Treasure chest
+  question: What is the best disappointing treasure?
+  options: [Old coupons, One sock, Love letter, Very pretty rock]
+- id: body-swap
+  title: Body swap
+  question: First priority after a body swap?
+  options: [Find a mirror, Check phone, Panic quietly, Eat their favorite food]
+- id: pet-name
+  title: Nickname energy
+  question: Which nickname is most dangerous?
+  options: [Sunshine, Your Majesty, Bestie, The full legal name]
+- id: magic-school
+  title: Magic school
+  question: What class would your OC skip at magic school?
+  options: [Potion safety, Flying, Ancient runes, Group projects]
+- id: road-trip
+  title: Road trip
+  question: What ends a fictional road trip first?
+  options: [No signal, Bad playlist, Wrong map, Unresolved feelings]
+- id: favorite-room
+  title: A quiet room
+  question: Which room reveals the most about a character?
+  options: [Bedroom, Kitchen, Workshop, Backpack]
+- id: first-impression
+  title: First impression
+  question: Which first impression is hardest to recover from?
+  options: [Walking into a door, Wrong name, Spilling drink, Being too mysterious]
+- id: cursed-item
+  title: Cursed object
+  question: What is the funniest object to discover is cursed?
+  options: [Hairbrush, Toaster, Notebook, Plush toy]
+- id: party-role
+  title: Party role
+  question: At a party, your OC is probably...
+  options: [Hosting, Hiding with the pet, Dancing badly, Leaving early]
+- id: song-scene
+  title: Scene soundtrack
+  question: A perfect scene starts with...
+  options: [One song, One sound effect, Awkward silence, Someone laughing]
+- id: rival-teamup
+  title: Rival team-up
+  question: Why would rivals reluctantly work together?
+  options: [Shared enemy, Rent is due, Lost pet, They made a bet]
+- id: tiny-joy
+  title: Tiny joy
+  question: Which tiny moment belongs in more stories?
+  options: [Sharing snacks, Fixing a sleeve, Waiting for a bus, Falling asleep nearby]
+

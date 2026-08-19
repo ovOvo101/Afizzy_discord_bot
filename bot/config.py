@@ -1,0 +1,97 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import yaml
+
+
+class ConfigError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class DiscordConfig:
+    guild_id: int | None
+    poll_channel_id: int | None
+    prompt_channel_id: int | None
+
+
+@dataclass(frozen=True)
+class ScheduleConfig:
+    timezone: ZoneInfo
+    poll_time: str
+    prompt_time: str
+    poll_duration_hours: int
+
+
+@dataclass(frozen=True)
+class Settings:
+    discord: DiscordConfig
+    schedule: ScheduleConfig
+    database_path: Path
+    polls_path: Path
+    prompts_path: Path
+    ideas_path: Path
+
+
+def _optional_positive_int(value: object, name: str) -> int | None:
+    if value in (None, 0, "", "0"):
+        return None
+    try:
+        result = int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"{name} must be a positive integer") from exc
+    if result < 1:
+        raise ConfigError(f"{name} must be a positive integer")
+    return result
+
+
+def _time(value: object, name: str) -> str:
+    if not isinstance(value, str) or len(value) != 5 or value[2] != ":":
+        raise ConfigError(f"{name} must be HH:MM")
+    try:
+        hour, minute = (int(part) for part in value.split(":"))
+    except ValueError as exc:
+        raise ConfigError(f"{name} must be HH:MM") from exc
+    if not 0 <= hour <= 23 or not 0 <= minute <= 59:
+        raise ConfigError(f"{name} must be a valid time")
+    return value
+
+
+def load_settings(path: str | Path) -> Settings:
+    config_path = Path(path)
+    try:
+        payload = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise ConfigError(f"Unable to read config: {config_path}") from exc
+    if not isinstance(payload, dict):
+        raise ConfigError("Config root must be a mapping")
+    discord = payload.get("discord", {})
+    scheduling = payload.get("scheduling", {})
+    storage = payload.get("storage", {})
+    content = payload.get("content", {})
+    if not all(isinstance(section, dict) for section in (discord, scheduling, storage, content)):
+        raise ConfigError("Config sections must be mappings")
+    try:
+        timezone = ZoneInfo(str(scheduling.get("timezone", "Asia/Shanghai")))
+    except Exception as exc:
+        raise ConfigError("scheduling.timezone is invalid") from exc
+    duration = scheduling.get("poll_duration_hours", 24)
+    if not isinstance(duration, int) or not 1 <= duration <= 168:
+        raise ConfigError("poll_duration_hours must be between 1 and 168")
+    root = config_path.parent.parent
+    def resolve(value: object, name: str) -> Path:
+        if not isinstance(value, str) or not value:
+            raise ConfigError(f"{name} is required")
+        return root / value
+    return Settings(
+        discord=DiscordConfig(_optional_positive_int(discord.get("guild_id"), "guild_id"), _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"), _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id")),
+        schedule=ScheduleConfig(timezone, _time(scheduling.get("poll_time", "18:00"), "poll_time"), _time(scheduling.get("prompt_time", "20:00"), "prompt_time"), duration),
+        database_path=resolve(storage.get("database_path"), "storage.database_path"),
+        polls_path=resolve(content.get("polls_path"), "content.polls_path"),
+        prompts_path=resolve(content.get("prompts_path"), "content.prompts_path"),
+        ideas_path=resolve(content.get("ideas_path"), "content.ideas_path"),
+    )
+

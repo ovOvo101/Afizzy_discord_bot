@@ -1,0 +1,2 @@
+"""Creative Discord Bot MVP."""
+

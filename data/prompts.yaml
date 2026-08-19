@@ -1,0 +1,60 @@
+- {id: oc-01, category: oc, text: "Give your OC an outfit that is completely unlike their usual style."}
+- {id: oc-02, category: oc, text: "Draw or write your OC trying to hide a terrible haircut."}
+- {id: oc-03, category: oc, text: "What does your OC keep in the very bottom of their bag?"}
+- {id: oc-04, category: oc, text: "Show your OC at their most competitive over something very small."}
+- {id: oc-05, category: oc, text: "Your OC has one free afternoon. Where do they go first?"}
+- {id: oc-06, category: oc, text: "Design a childhood version of your OC with one recognizable detail."}
+- {id: fanart-01, category: fanart, text: "Put a favorite character in a weather they would complain about."}
+- {id: fanart-02, category: fanart, text: "Draw a character caught in a candid photo."}
+- {id: fanart-03, category: fanart, text: "Redesign a character's outfit for a completely different genre."}
+- {id: fanart-04, category: fanart, text: "Make fanart of a character holding something they definitely should not have."}
+- {id: fanart-05, category: fanart, text: "Illustrate the five quiet minutes after a big adventure."}
+- {id: fanart-06, category: fanart, text: "Give a character a tiny companion with a huge personality."}
+- {id: fanfiction-01, category: fanfiction, text: "Write the scene where two characters realize they have the same bad habit."}
+- {id: fanfiction-02, category: fanfiction, text: "Write an apology that gets interrupted three times."}
+- {id: fanfiction-03, category: fanfiction, text: "A character finds an old note in a book they borrowed."}
+- {id: fanfiction-04, category: fanfiction, text: "Write a conversation that happens while someone is making instant noodles."}
+- {id: fanfiction-05, category: fanfiction, text: "Two rivals have to pretend they are friends for one evening."}
+- {id: fanfiction-06, category: fanfiction, text: "Write a scene told entirely through text messages."}
+- {id: writing-01, category: writing, text: "A character receives a message from ten years in the future at 3 AM."}
+- {id: writing-02, category: writing, text: "Write about a door that appears only when someone needs a break."}
+- {id: writing-03, category: writing, text: "Someone discovers their shadow has been keeping a diary."}
+- {id: writing-04, category: writing, text: "Write a reunion where nobody says the thing they came to say."}
+- {id: writing-05, category: writing, text: "The local convenience store sells one impossible item after midnight."}
+- {id: writing-06, category: writing, text: "Start a story with: 'This was not the pet we agreed to adopt.'"}
+- {id: relationship-01, category: relationship, text: "Your ship must run a coffee shop together. Who breaks first?"}
+- {id: relationship-02, category: relationship, text: "Show two characters sharing one umbrella and too much silence."}
+- {id: relationship-03, category: relationship, text: "One character remembers every tiny detail; the other remembers one important thing."}
+- {id: relationship-04, category: relationship, text: "A pair gets stuck in an elevator with a box of mystery pastries."}
+- {id: relationship-05, category: relationship, text: "Write or draw the moment two people almost hold hands."}
+- {id: relationship-06, category: relationship, text: "One character teaches the other a skill with very mixed results."}
+- {id: worldbuilding-01, category: worldbuilding, text: "Invent a secret that only children in your world know."}
+- {id: worldbuilding-02, category: worldbuilding, text: "Create a local festival with one oddly specific rule."}
+- {id: worldbuilding-03, category: worldbuilding, text: "Design the most beloved street food in your setting."}
+- {id: worldbuilding-04, category: worldbuilding, text: "What tiny superstition do people have in your world?"}
+- {id: worldbuilding-05, category: worldbuilding, text: "Describe a public place that everyone avoids for different reasons."}
+- {id: worldbuilding-06, category: worldbuilding, text: "Make a holiday that started from a historical misunderstanding."}
+- {id: au-01, category: au, text: "Put your characters in a small town with one impossible secret."}
+- {id: au-02, category: au, text: "Turn your cast into a terrible band preparing for their first show."}
+- {id: au-03, category: au, text: "Make an AU where everyone has a very inconvenient magical job."}
+- {id: au-04, category: au, text: "Your characters work at a night museum. What moves after closing?"}
+- {id: au-05, category: au, text: "Create a train-station AU where one platform goes somewhere strange."}
+- {id: au-06, category: au, text: "Put your cast in a baking competition with deeply personal stakes."}
+- {id: funny-01, category: funny, text: "Your character tries to look cool and immediately walks into a door."}
+- {id: funny-02, category: funny, text: "Draw or write a very serious argument about the wrong pizza topping."}
+- {id: funny-03, category: funny, text: "A villain's dramatic monologue is interrupted by an alarm clock."}
+- {id: funny-04, category: funny, text: "Your OC gets assigned the world's least impressive superpower."}
+- {id: funny-05, category: funny, text: "Someone accidentally adopts a creature that is much too honest."}
+- {id: funny-06, category: funny, text: "Your characters try to assemble furniture without instructions."}
+- {id: challenge-01, category: challenge, text: "Create a scene using only three colors or three descriptive words."}
+- {id: challenge-02, category: challenge, text: "Make something inspired by the last object you touched."}
+- {id: challenge-03, category: challenge, text: "Create a character expression you rarely draw or write."}
+- {id: challenge-04, category: challenge, text: "Tell a complete tiny story in six sentences or six panels."}
+- {id: challenge-05, category: challenge, text: "Use a random number as an important detail in your creation."}
+- {id: challenge-06, category: challenge, text: "Make a scene that includes rain, a drink, and an unanswered question."}
+- {id: oc-07, category: oc, text: "Show your OC receiving a gift that is almost perfect."}
+- {id: fanart-07, category: fanart, text: "Draw a character lit only by a vending machine at night."}
+- {id: fanfiction-07, category: fanfiction, text: "Write the moment a character decides not to send a message."}
+- {id: writing-07, category: writing, text: "A lost umbrella keeps finding its way back to the same person."}
+- {id: relationship-07, category: relationship, text: "Two characters try to cook from the same recipe and disagree at every step."}
+- {id: worldbuilding-07, category: worldbuilding, text: "Invent a tiny service people rely on but never talk about."}

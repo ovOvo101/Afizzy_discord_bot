@@ -1,0 +1,16 @@
+discord:
+  guild_id: 0 # Optional: set this during development for instant slash-command sync.
+  poll_channel_id: 0 # Required before the daily poll scheduler is enabled.
+  prompt_channel_id: 0 # Required before the daily prompt scheduler is enabled.
+scheduling:
+  timezone: Asia/Shanghai
+  poll_time: "18:00"
+  prompt_time: "20:00"
+  poll_duration_hours: 24
+storage:
+  database_path: data/bot.sqlite3
+content:
+  polls_path: data/polls.yaml
+  prompts_path: data/prompts.yaml
+  ideas_path: data/ideas.yaml
+
