@@ -22,6 +22,7 @@ def prepare_project(tmp_path: Path, monkeypatch) -> Path:
     monkeypatch.setattr(admin, "PID_PATH", root / "runtime/bot.pid")
     monkeypatch.setattr(admin, "LOG_PATH", root / "runtime/bot.log")
     monkeypatch.setattr(admin, "BACKUPS", root / "runtime/backups")
+    monkeypatch.setattr(admin, "AGENT_PATH", root / "runtime/com.creative-discord-bot.plist")
     return root
 
 

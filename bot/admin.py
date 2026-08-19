@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import plistlib
+import re
 import signal
 import subprocess
 import sys
@@ -25,6 +27,8 @@ RUNTIME = ROOT / "runtime"
 PID_PATH = RUNTIME / "bot.pid"
 LOG_PATH = RUNTIME / "bot.log"
 BACKUPS = RUNTIME / "backups"
+AGENT_PATH = RUNTIME / "com.creative-discord-bot.plist"
+AGENT_LABEL = "com.creative-discord-bot"
 MAX_BACKUPS = 20
 MUTABLE_CONFIG = {
     "discord.guild_id", "discord.poll_channel_id", "discord.prompt_channel_id",
@@ -59,6 +63,11 @@ def validate_project() -> None:
 
 
 def process_id() -> int | None:
+    if sys.platform == "darwin" and AGENT_PATH.exists():
+        domain = f"gui/{os.getuid()}/{AGENT_LABEL}"
+        result = subprocess.run(["launchctl", "print", domain], capture_output=True, text=True, check=False)
+        match = re.search(r"\bpid = (\d+)", result.stdout)
+        return int(match.group(1)) if result.returncode == 0 and match else None
     try:
         pid = int(PID_PATH.read_text(encoding="utf-8").strip())
         os.kill(pid, 0)
@@ -82,6 +91,33 @@ def start() -> dict[str, object]:
     if active:
         return {**status(), "message": "Bot is already running"}
     RUNTIME.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "darwin":
+        agent = {
+            "Label": AGENT_LABEL,
+            "ProgramArguments": [sys.executable, "-m", "bot.main"],
+            "WorkingDirectory": str(ROOT),
+            "RunAtLoad": True,
+            "KeepAlive": True,
+            "StandardOutPath": str(LOG_PATH),
+            "StandardErrorPath": str(LOG_PATH),
+            "EnvironmentVariables": {"PYTHONUNBUFFERED": "1"},
+        }
+        with AGENT_PATH.open("wb") as file:
+            plistlib.dump(agent, file)
+        domain = f"gui/{os.getuid()}"
+        service = f"{domain}/{AGENT_LABEL}"
+        exists = subprocess.run(["launchctl", "print", service], capture_output=True, check=False).returncode == 0
+        if exists:
+            subprocess.run(["launchctl", "bootout", service], capture_output=True, text=True, check=False)
+        result = subprocess.run(["launchctl", "bootstrap", domain, str(AGENT_PATH)], capture_output=True, text=True, check=False)
+        if result.returncode:
+            raise AdminError(result.stderr.strip() or "launchctl could not start the Bot")
+        time.sleep(0.5)
+        pid = process_id()
+        if not pid:
+            raise AdminError("Bot did not stay running; inspect runtime/bot.log")
+        PID_PATH.write_text(str(pid), encoding="utf-8")
+        return {**status(), "message": "Bot started"}
     with LOG_PATH.open("a", encoding="utf-8") as log:
         process = subprocess.Popen(
             [sys.executable, "-m", "bot.main"], cwd=ROOT, stdout=log,
@@ -97,6 +133,13 @@ def start() -> dict[str, object]:
 
 def stop() -> dict[str, object]:
     pid = process_id()
+    if sys.platform == "darwin" and AGENT_PATH.exists():
+        service = f"gui/{os.getuid()}/{AGENT_LABEL}"
+        result = subprocess.run(["launchctl", "bootout", service], capture_output=True, text=True, check=False)
+        if result.returncode and "No such process" not in result.stderr:
+            raise AdminError(result.stderr.strip() or "launchctl could not stop the Bot")
+        PID_PATH.unlink(missing_ok=True)
+        return {**status(), "message": "Bot stopped"}
     if not pid:
         return {**status(), "message": "Bot is not running"}
     os.kill(pid, signal.SIGTERM)
