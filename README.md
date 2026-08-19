@@ -2,6 +2,8 @@
 
 A low-pressure Discord bot for creator communities. It posts one daily poll, one daily creative prompt, and provides `/idea` for on-demand inspiration. Translation, AI chat, rankings, moderation and economy features are intentionally out of scope.
 
+中文、零基础部署说明见：[使用指南.md](使用指南.md)。
+
 ## Run locally
 
 1. Create a Discord application and Bot in the [Discord Developer Portal](https://discord.com/developers/applications). Enable **Message Content Intent** under Bot settings; it is only used to count replies to the daily prompt.
