@@ -6,6 +6,7 @@ from datetime import datetime
 
 import discord
 from discord import app_commands
+from dotenv import load_dotenv
 
 from .config import ConfigError, Settings, load_settings
 from .content import VALID_CATEGORIES, ContentError, load_ideas, load_polls, load_prompts
@@ -68,6 +69,7 @@ def build_bot(config_path: str) -> CreativeBot:
 
 
 def main() -> None:
+    load_dotenv()
     token = os.getenv("DISCORD_TOKEN")
     if not token:
         raise RuntimeError("DISCORD_TOKEN is required; copy .env.example to .env and set it")

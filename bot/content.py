@@ -31,10 +31,16 @@ class PromptItem:
 
 
 @dataclass(frozen=True)
+class IdeaItem:
+    id: str
+    text: str
+
+
+@dataclass(frozen=True)
 class IdeaParts:
-    base: dict[str, tuple[str, ...]]
-    constraints: tuple[str, ...]
-    bonuses: tuple[str, ...]
+    base: dict[str, tuple[IdeaItem, ...]]
+    constraints: tuple[IdeaItem, ...]
+    bonuses: tuple[IdeaItem, ...]
 
 
 def _load(path: Path) -> object:
@@ -87,15 +93,32 @@ def load_ideas(path: Path) -> IdeaParts:
     payload = _load(path)
     if not isinstance(payload, dict) or not isinstance(payload.get("base"), dict):
         raise ContentError("Idea data must have a base mapping")
-    base: dict[str, tuple[str, ...]] = {}
-    for category, entries in payload["base"].items():
-        if category not in VALID_CATEGORIES or not isinstance(entries, list) or not entries or not all(isinstance(item, str) and item.strip() for item in entries):
+    base: dict[str, tuple[IdeaItem, ...]] = {}
+    identifiers: set[str] = set()
+
+    def parse_entries(value: object, prefix: str) -> tuple[IdeaItem, ...]:
+        if not isinstance(value, list) or not value:
+            raise ContentError(f"{prefix} must be a non-empty list")
+        result: list[IdeaItem] = []
+        for index, item in enumerate(value, start=1):
+            if isinstance(item, str):  # Legacy input remains readable during migration.
+                identifier, text = f"{prefix}-{index:02d}", item
+            elif isinstance(item, dict):
+                identifier, text = item.get("id"), item.get("text")
+            else:
+                raise ContentError(f"invalid {prefix} entry")
+            if not isinstance(identifier, str) or not identifier.strip() or identifier in identifiers or not isinstance(text, str) or not text.strip():
+                raise ContentError(f"invalid {prefix} entry")
+            identifiers.add(identifier)
+            result.append(IdeaItem(identifier, text))
+        return tuple(result)
+
+    for category, raw_entries in payload["base"].items():
+        if category not in VALID_CATEGORIES:
             raise ContentError(f"invalid idea category: {category}")
-        base[category] = tuple(entries)
+        base[category] = parse_entries(raw_entries, f"base-{category}")
     constraints, bonuses = payload.get("constraints", []), payload.get("bonuses", [])
-    if not all(isinstance(group, list) and all(isinstance(item, str) and item.strip() for item in group) for group in (constraints, bonuses)):
-        raise ContentError("Idea constraints and bonuses must be text lists")
-    return IdeaParts(base, tuple(constraints), tuple(bonuses))
+    return IdeaParts(base, parse_entries(constraints, "constraint"), parse_entries(bonuses, "bonus"))
 
 
 T = TypeVar("T")
@@ -108,9 +131,9 @@ def pick_unseen(items: list[T], used_ids: set[str]) -> T:
 
 def make_idea(parts: IdeaParts, category: str | None = None) -> str:
     available = category if category in parts.base else choice(list(parts.base))
-    lines = [choice(parts.base[available])]
+    lines = [choice(parts.base[available]).text]
     if parts.constraints:
-        lines.append(choice(parts.constraints))
+        lines.append(choice(parts.constraints).text)
     if parts.bonuses:
-        lines.extend(["", f"Bonus: {choice(parts.bonuses)}"])
+        lines.extend(["", f"Bonus: {choice(parts.bonuses).text}"])
     return "\n".join(lines)
