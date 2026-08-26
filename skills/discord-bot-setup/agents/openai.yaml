@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discord Bot Setup"
+  short_description: "Prepare a local Bot safely, with tokens kept private."
+  default_prompt: "Use $discord-bot-setup to set up this local Discord Bot without exposing its token."

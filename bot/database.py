@@ -26,6 +26,11 @@ class Database:
           day TEXT NOT NULL, metric TEXT NOT NULL, value INTEGER NOT NULL DEFAULT 0,
           PRIMARY KEY(day, metric)
         );
+        CREATE TABLE IF NOT EXISTS invite_code_messages (
+          guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+          message_id INTEGER NOT NULL, created_at TEXT NOT NULL,
+          PRIMARY KEY(guild_id, channel_id, user_id)
+        );
         """)
         self.connection.commit()
 
@@ -63,3 +68,17 @@ class Database:
     def increment_metric(self, day: str, metric: str) -> None:
         self.connection.execute("INSERT INTO metrics(day, metric, value) VALUES (?, ?, 1) ON CONFLICT(day, metric) DO UPDATE SET value = value + 1", (day, metric))
         self.connection.commit()
+
+    def claim_invite_code_message(
+        self, guild_id: int, channel_id: int, user_id: int, message_id: int
+    ) -> bool:
+        cursor = self.connection.execute(
+            """
+            INSERT OR IGNORE INTO invite_code_messages(
+              guild_id, channel_id, user_id, message_id, created_at
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (guild_id, channel_id, user_id, message_id, datetime.now(UTC).isoformat()),
+        )
+        self.connection.commit()
+        return cursor.rowcount == 1

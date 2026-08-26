@@ -2,6 +2,9 @@ discord:
   guild_id: 0 # Optional: test server ID for instant slash-command sync.
   poll_channel_id: 0 # Set to 0 to disable scheduled polls.
   prompt_channel_id: 0 # Set to 0 to disable scheduled prompts.
+features:
+  invite_code_limit: true
+  inspiration: false # Keeps daily polls, prompts, and /idea silent.
 scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"

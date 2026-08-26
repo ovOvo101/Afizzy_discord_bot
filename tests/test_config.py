@@ -10,12 +10,15 @@ def test_load_settings_resolves_paths(tmp_path: Path) -> None:
     config_dir.mkdir()
     (config_dir / "config.yaml").write_text("""
 discord: {guild_id: 0, poll_channel_id: 1, prompt_channel_id: 2}
+features: {invite_code_limit: true, inspiration: false}
 scheduling: {timezone: Asia/Shanghai, poll_time: '18:00', prompt_time: '20:00', poll_duration_hours: 24}
 storage: {database_path: data/test.sqlite3}
 content: {polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}
 """, encoding="utf-8")
     settings = load_settings(config_dir / "config.yaml")
     assert settings.discord.poll_channel_id == 1
+    assert settings.features.invite_code_limit
+    assert not settings.features.inspiration
     assert settings.database_path == tmp_path / "data/test.sqlite3"
 
 

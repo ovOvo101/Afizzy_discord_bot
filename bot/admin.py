@@ -32,6 +32,7 @@ AGENT_LABEL = "com.creative-discord-bot"
 MAX_BACKUPS = 20
 MUTABLE_CONFIG = {
     "discord.guild_id", "discord.poll_channel_id", "discord.prompt_channel_id",
+    "features.invite_code_limit", "features.inspiration",
     "scheduling.timezone", "scheduling.poll_time", "scheduling.prompt_time",
     "scheduling.poll_duration_hours", "storage.database_path", "content.polls_path",
     "content.prompts_path", "content.ideas_path",
@@ -55,11 +56,11 @@ def read_yaml(path: Path) -> Any:
 
 
 def validate_project() -> None:
-    load_settings(CONFIG_PATH)
     settings = load_settings(CONFIG_PATH)
-    load_polls(settings.polls_path)
-    load_prompts(settings.prompts_path)
-    load_ideas(settings.ideas_path)
+    if settings.features.inspiration:
+        load_polls(settings.polls_path)
+        load_prompts(settings.prompts_path)
+        load_ideas(settings.ideas_path)
 
 
 def process_id() -> int | None:

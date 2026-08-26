@@ -27,9 +27,16 @@ class ScheduleConfig:
 
 
 @dataclass(frozen=True)
+class FeatureConfig:
+    invite_code_limit: bool
+    inspiration: bool
+
+
+@dataclass(frozen=True)
 class Settings:
     discord: DiscordConfig
     schedule: ScheduleConfig
+    features: FeatureConfig
     database_path: Path
     polls_path: Path
     prompts_path: Path
@@ -60,6 +67,14 @@ def _time(value: object, name: str) -> str:
     return value
 
 
+def _boolean(value: object, name: str, default: bool) -> bool:
+    if value is None:
+        return default
+    if not isinstance(value, bool):
+        raise ConfigError(f"{name} must be true or false")
+    return value
+
+
 def load_settings(path: str | Path) -> Settings:
     config_path = Path(path)
     try:
@@ -72,7 +87,11 @@ def load_settings(path: str | Path) -> Settings:
     scheduling = payload.get("scheduling", {})
     storage = payload.get("storage", {})
     content = payload.get("content", {})
-    if not all(isinstance(section, dict) for section in (discord, scheduling, storage, content)):
+    features = payload.get("features", {})
+    if not all(
+        isinstance(section, dict)
+        for section in (discord, scheduling, storage, content, features)
+    ):
         raise ConfigError("Config sections must be mappings")
     try:
         timezone = ZoneInfo(str(scheduling.get("timezone", "Asia/Shanghai")))
@@ -89,9 +108,14 @@ def load_settings(path: str | Path) -> Settings:
     return Settings(
         discord=DiscordConfig(_optional_positive_int(discord.get("guild_id"), "guild_id"), _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"), _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id")),
         schedule=ScheduleConfig(timezone, _time(scheduling.get("poll_time", "18:00"), "poll_time"), _time(scheduling.get("prompt_time", "20:00"), "prompt_time"), duration),
+        features=FeatureConfig(
+            invite_code_limit=_boolean(
+                features.get("invite_code_limit"), "features.invite_code_limit", True
+            ),
+            inspiration=_boolean(features.get("inspiration"), "features.inspiration", False),
+        ),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),
         prompts_path=resolve(content.get("prompts_path"), "content.prompts_path"),
         ideas_path=resolve(content.get("ideas_path"), "content.ideas_path"),
     )
-
