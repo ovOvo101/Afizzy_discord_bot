@@ -33,7 +33,8 @@ class InspirationFeature:
             load_ideas(settings.ideas_path),
         )
         self.scheduler: DailyScheduler | None = None
-        self._register_commands()
+        if settings.features.idea:
+            self._register_commands()
 
     def _register_commands(self) -> None:
         @self.tree.command(name="idea", description="Get a small creative problem to solve.")
@@ -67,6 +68,8 @@ class InspirationFeature:
             self.scheduler.stop()
 
     async def on_message(self, message: discord.Message) -> None:
+        if not self.settings.features.daily_prompt:
+            return
         if message.author.bot or not message.reference or not message.reference.message_id:
             return
         prompt_ids = {

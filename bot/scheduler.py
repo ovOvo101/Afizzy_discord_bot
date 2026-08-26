@@ -29,11 +29,16 @@ class DailyScheduler:
     async def tick(self) -> None:
         try:
             now = datetime.now(self.settings.schedule.timezone)
-            if is_due(now, self.settings.schedule.poll_time):
+            if self.settings.features.daily_poll and is_due(
+                now, self.settings.schedule.poll_time
+            ):
                 await self.publish_poll(now)
-            if is_due(now, self.settings.schedule.prompt_time):
+            if self.settings.features.daily_prompt and is_due(
+                now, self.settings.schedule.prompt_time
+            ):
                 await self.publish_prompt(now)
-            await self.summarize_ended_polls(now)
+            if self.settings.features.daily_poll:
+                await self.summarize_ended_polls(now)
         except Exception:
             LOGGER.exception("Scheduler tick failed")
 
@@ -62,6 +67,12 @@ class DailyScheduler:
             message = await channel.send(content=f"🗳️ **{item.title}**\n{item.description or 'A tiny question for today. Pick what feels right.'}", poll=poll)
             self.database.finish_publication("poll", day, message.id, channel.id)  # type: ignore[attr-defined]
             self.database.save_poll(message.id, channel.id, now + timedelta(hours=self.settings.schedule.poll_duration_hours))  # type: ignore[attr-defined]
+            LOGGER.info(
+                "Published daily poll %s as message %s in channel %s",
+                item.id,
+                message.id,
+                channel.id,
+            )
         except Exception:
             self.database.abandon_publication("poll", day)
             LOGGER.exception("Unable to publish daily poll")

@@ -1,8 +1,8 @@
 # Fizzy Discord Bot
 
-Fizzy is deployed as a continuously running Railway worker. It currently limits each member
-to one message in channels named `invite-code`. Daily polls, daily prompts, and `/idea` are
-isolated in an optional inspiration feature and remain silent by default.
+Fizzy is deployed as a continuously running Railway worker. It limits each member to one
+message in channels named `invite-code` and can run daily polls. Polls, prompts, and `/idea`
+have independent feature switches.
 
 ## Railway deployment
 
@@ -20,7 +20,9 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 ## Features
 
 - `features.invite_code_limit`: enables the persistent one-message limit for `invite-code`.
-- `features.inspiration`: enables polls, prompts, and `/idea` as an isolated group.
+- `features.daily_poll`: enables scheduled daily polls.
+- `features.daily_prompt`: enables scheduled daily prompts.
+- `features.idea`: enables the `/idea` command.
 - `data/polls.yaml`, `data/prompts.yaml`, and `data/ideas.yaml`: inspiration content retained for
   future use.
 

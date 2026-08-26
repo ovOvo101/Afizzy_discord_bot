@@ -29,7 +29,9 @@ class ScheduleConfig:
 @dataclass(frozen=True)
 class FeatureConfig:
     invite_code_limit: bool
-    inspiration: bool
+    daily_poll: bool
+    daily_prompt: bool
+    idea: bool
 
 
 @dataclass(frozen=True)
@@ -112,7 +114,11 @@ def load_settings(path: str | Path) -> Settings:
             invite_code_limit=_boolean(
                 features.get("invite_code_limit"), "features.invite_code_limit", True
             ),
-            inspiration=_boolean(features.get("inspiration"), "features.inspiration", False),
+            daily_poll=_boolean(features.get("daily_poll"), "features.daily_poll", False),
+            daily_prompt=_boolean(
+                features.get("daily_prompt"), "features.daily_prompt", False
+            ),
+            idea=_boolean(features.get("idea"), "features.idea", False),
         ),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),

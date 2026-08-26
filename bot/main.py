@@ -28,7 +28,13 @@ class CreativeBot(discord.Client):
         )
         self.inspiration = (
             InspirationFeature(self, self.tree, settings, database)
-            if settings.features.inspiration
+            if any(
+                (
+                    settings.features.daily_poll,
+                    settings.features.daily_prompt,
+                    settings.features.idea,
+                )
+            )
             else None
         )
 

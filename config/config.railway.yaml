@@ -1,13 +1,15 @@
 discord:
   guild_id: 1534037288160329819
-  poll_channel_id: 0
+  poll_channel_id: 1534861622214922240
   prompt_channel_id: 0
 features:
   invite_code_limit: true
-  inspiration: false
+  daily_poll: true
+  daily_prompt: false
+  idea: false
 scheduling:
   timezone: Asia/Shanghai
-  poll_time: "18:00"
+  poll_time: "16:47"
   prompt_time: "20:00"
   poll_duration_hours: 24
 storage:
