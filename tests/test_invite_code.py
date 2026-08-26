@@ -31,8 +31,9 @@ async def test_invite_code_limiter_keeps_first_and_removes_second(tmp_path: Path
     first.delete.assert_not_awaited()
     second.delete.assert_awaited_once()
     second.author.send.assert_awaited_once_with(
-        "Thanks! Only one message is allowed in #invite-code, "
-        "so we removed your latest one."
+        "Hi! To keep **#invite-code** organized for everyone, the channel is set "
+        "to one message per member. We've removed your latest message so your "
+        "original post stays active. Thanks so much for understanding! ✨"
     )
     database.close()
 

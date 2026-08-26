@@ -42,8 +42,9 @@ class InviteCodeLimiter:
 
         try:
             await message.author.send(
-                f"Thanks! Only one message is allowed in #{message.channel.name}, "
-                "so we removed your latest one."
+                "Hi! To keep **#invite-code** organized for everyone, the channel is set "
+                "to one message per member. We've removed your latest message so your "
+                "original post stays active. Thanks so much for understanding! ✨"
             )
         except discord.HTTPException:
             LOGGER.info(

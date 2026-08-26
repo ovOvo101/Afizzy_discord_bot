@@ -57,3 +57,10 @@ When inspiration is enabled, the app validates its content before connecting to 
 python -m pytest
 python -m ruff check bot tests
 ```
+
+## Deploy on Railway
+
+The repository includes `railway.json` and `config/config.railway.yaml` for a continuously
+running worker. Connect this GitHub repository to Railway, set the secret variable
+`DISCORD_TOKEN`, and attach a volume at `/data` so the SQLite message-limit history survives
+redeployments. Do not generate a public domain; the Discord Bot only needs outbound access.
