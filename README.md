@@ -1,7 +1,7 @@
 # Fizzy Discord Bot
 
 Fizzy is deployed as a continuously running Railway worker. It limits each member to one
-message in channels named `invite-code` and can run scheduled polls. Polls, prompts, and `/idea`
+message in a configured channel and can run scheduled polls. Polls, prompts, and `/idea`
 have independent feature switches.
 
 ## Railway deployment
@@ -20,6 +20,7 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 ## Features
 
 - `features.invite_code_limit`: enables the persistent one-message limit for `invite-code`.
+- `discord.invite_code_channel_id`: identifies the channel where that limit applies.
 - `features.daily_poll`: enables scheduled polls.
 - `scheduling.poll_weekdays`: selects the weekdays when polls are published.
 - `features.daily_prompt`: enables scheduled daily prompts.

@@ -24,7 +24,9 @@ class CreativeBot(discord.Client):
         self.settings, self.database = settings, database
         self.tree = app_commands.CommandTree(self)
         self.invite_code = (
-            InviteCodeLimiter(database) if settings.features.invite_code_limit else None
+            InviteCodeLimiter(database, settings.discord.invite_code_channel_id)
+            if settings.features.invite_code_limit
+            else None
         )
         self.inspiration = (
             InspirationFeature(self, self.tree, settings, database)

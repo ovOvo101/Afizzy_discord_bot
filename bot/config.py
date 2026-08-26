@@ -16,6 +16,7 @@ class DiscordConfig:
     guild_id: int | None
     poll_channel_id: int | None
     prompt_channel_id: int | None
+    invite_code_channel_id: int | None
 
 
 @dataclass(frozen=True)
@@ -132,7 +133,14 @@ def load_settings(path: str | Path) -> Settings:
             raise ConfigError(f"{name} is required")
         return root / value
     return Settings(
-        discord=DiscordConfig(_optional_positive_int(discord.get("guild_id"), "guild_id"), _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"), _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id")),
+        discord=DiscordConfig(
+            _optional_positive_int(discord.get("guild_id"), "guild_id"),
+            _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"),
+            _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id"),
+            _optional_positive_int(
+                discord.get("invite_code_channel_id"), "invite_code_channel_id"
+            ),
+        ),
         schedule=ScheduleConfig(
             timezone,
             _time(scheduling.get("poll_time", "18:00"), "poll_time"),

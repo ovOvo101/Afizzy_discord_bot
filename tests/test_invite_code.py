@@ -21,7 +21,7 @@ def message(message_id: int) -> SimpleNamespace:
 async def test_invite_code_limiter_keeps_first_and_removes_second(tmp_path: Path) -> None:
     database = Database(tmp_path / "bot.sqlite3")
     database.initialize()
-    limiter = InviteCodeLimiter(database)
+    limiter = InviteCodeLimiter(database, 10)
     first = message(1000)
     second = message(1001)
 
@@ -41,7 +41,7 @@ async def test_invite_code_limiter_keeps_first_and_removes_second(tmp_path: Path
 async def test_invite_code_limiter_ignores_other_channels(tmp_path: Path) -> None:
     database = Database(tmp_path / "bot.sqlite3")
     database.initialize()
-    limiter = InviteCodeLimiter(database)
+    limiter = InviteCodeLimiter(database, 999)
     other = message(1000)
     other.channel.name = "general"
 

@@ -10,16 +10,17 @@ LOGGER = logging.getLogger(__name__)
 
 
 class InviteCodeLimiter:
-    """Enforce a persistent one-message limit in channels named invite-code."""
+    """Enforce a persistent one-message limit in the configured channel."""
 
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: Database, channel_id: int | None) -> None:
         self.database = database
+        self.channel_id = channel_id
 
     async def handle(self, message: discord.Message) -> None:
         if (
             message.author.bot
             or message.guild is None
-            or getattr(message.channel, "name", None) != "invite-code"
+            or message.channel.id != self.channel_id
         ):
             return
 

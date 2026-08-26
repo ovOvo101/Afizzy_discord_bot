@@ -2,6 +2,7 @@ discord:
   guild_id: 1524016102919635075
   poll_channel_id: 1528285430196342804
   prompt_channel_id: 0
+  invite_code_channel_id: 1528287028205191230
 features:
   invite_code_limit: true
   daily_poll: true
