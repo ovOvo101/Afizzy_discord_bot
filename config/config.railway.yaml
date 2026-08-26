@@ -5,7 +5,7 @@ discord:
   invite_code_channel_id: 1528287028205191230
 features:
   invite_code_limit: true
-  daily_poll: true
+  daily_poll: false
   daily_prompt: false
   idea: false
 scheduling:
