@@ -13,8 +13,12 @@ from .services import ContentService
 LOGGER = logging.getLogger(__name__)
 
 
-def is_due(now: datetime, time_string: str) -> bool:
-    return now.strftime("%H:%M") == time_string
+def is_due(
+    now: datetime, time_string: str, weekdays: tuple[int, ...] | None = None
+) -> bool:
+    return now.strftime("%H:%M") == time_string and (
+        weekdays is None or now.weekday() in weekdays
+    )
 
 
 class DailyScheduler:
@@ -30,7 +34,9 @@ class DailyScheduler:
         try:
             now = datetime.now(self.settings.schedule.timezone)
             if self.settings.features.daily_poll and is_due(
-                now, self.settings.schedule.poll_time
+                now,
+                self.settings.schedule.poll_time,
+                self.settings.schedule.poll_weekdays,
             ):
                 await self.publish_poll(now)
             if self.settings.features.daily_prompt and is_due(
@@ -68,7 +74,7 @@ class DailyScheduler:
             self.database.finish_publication("poll", day, message.id, channel.id)  # type: ignore[attr-defined]
             self.database.save_poll(message.id, channel.id, now + timedelta(hours=self.settings.schedule.poll_duration_hours))  # type: ignore[attr-defined]
             LOGGER.info(
-                "Published daily poll %s as message %s in channel %s",
+                "Published scheduled poll %s as message %s in channel %s",
                 item.id,
                 message.id,
                 channel.id,

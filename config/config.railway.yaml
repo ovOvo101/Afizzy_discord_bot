@@ -9,7 +9,8 @@ features:
   idea: false
 scheduling:
   timezone: Asia/Shanghai
-  poll_time: "16:47"
+  poll_time: "18:00"
+  poll_weekdays: [wednesday, friday, sunday]
   prompt_time: "20:00"
   poll_duration_hours: 24
 storage:

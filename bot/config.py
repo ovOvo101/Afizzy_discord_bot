@@ -22,6 +22,7 @@ class DiscordConfig:
 class ScheduleConfig:
     timezone: ZoneInfo
     poll_time: str
+    poll_weekdays: tuple[int, ...]
     prompt_time: str
     poll_duration_hours: int
 
@@ -77,6 +78,29 @@ def _boolean(value: object, name: str, default: bool) -> bool:
     return value
 
 
+def _weekdays(value: object) -> tuple[int, ...]:
+    names = {
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
+    }
+    if value is None:
+        return tuple(range(7))
+    if not isinstance(value, list) or not value:
+        raise ConfigError("scheduling.poll_weekdays must be a non-empty list")
+    try:
+        weekdays = tuple(names[str(day).lower()] for day in value)
+    except KeyError as exc:
+        raise ConfigError("scheduling.poll_weekdays contains an invalid weekday") from exc
+    if len(set(weekdays)) != len(weekdays):
+        raise ConfigError("scheduling.poll_weekdays must not contain duplicates")
+    return weekdays
+
+
 def load_settings(path: str | Path) -> Settings:
     config_path = Path(path)
     try:
@@ -109,7 +133,13 @@ def load_settings(path: str | Path) -> Settings:
         return root / value
     return Settings(
         discord=DiscordConfig(_optional_positive_int(discord.get("guild_id"), "guild_id"), _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"), _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id")),
-        schedule=ScheduleConfig(timezone, _time(scheduling.get("poll_time", "18:00"), "poll_time"), _time(scheduling.get("prompt_time", "20:00"), "prompt_time"), duration),
+        schedule=ScheduleConfig(
+            timezone,
+            _time(scheduling.get("poll_time", "18:00"), "poll_time"),
+            _weekdays(scheduling.get("poll_weekdays")),
+            _time(scheduling.get("prompt_time", "20:00"), "prompt_time"),
+            duration,
+        ),
         features=FeatureConfig(
             invite_code_limit=_boolean(
                 features.get("invite_code_limit"), "features.invite_code_limit", True

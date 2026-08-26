@@ -33,6 +33,8 @@ def test_poll_and_metric_tracking(tmp_path: Path) -> None:
 def test_due_time() -> None:
     assert is_due(datetime(2026, 8, 19, 18, 0, tzinfo=UTC), "18:00")
     assert not is_due(datetime(2026, 8, 19, 18, 1, tzinfo=UTC), "18:00")
+    assert is_due(datetime(2026, 8, 19, 18, 0, tzinfo=UTC), "18:00", (2, 4, 6))
+    assert not is_due(datetime(2026, 8, 20, 18, 0, tzinfo=UTC), "18:00", (2, 4, 6))
 
 
 def test_invite_code_channel_allows_one_message_per_user(tmp_path: Path) -> None:
