@@ -1,4 +1,0 @@
-interface:
-  display_name: "Discord Bot Manager"
-  short_description: "Manage a local Discord bot through natural language."
-  default_prompt: "Use $discord-bot-manager to check and manage this Discord Bot."

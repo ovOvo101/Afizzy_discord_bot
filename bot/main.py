@@ -5,7 +5,6 @@ import os
 
 import discord
 from discord import app_commands
-from dotenv import load_dotenv
 
 from .config import ConfigError, Settings, load_settings
 from .content import ContentError
@@ -64,12 +63,11 @@ def build_bot(config_path: str) -> CreativeBot:
 
 
 def main() -> None:
-    load_dotenv()
     token = os.getenv("DISCORD_TOKEN")
     if not token:
-        raise RuntimeError("DISCORD_TOKEN is required; copy .env.example to .env and set it")
+        raise RuntimeError("DISCORD_TOKEN is required")
     try:
-        bot = build_bot(os.getenv("BOT_CONFIG_PATH", "config/config.yaml"))
+        bot = build_bot(os.getenv("BOT_CONFIG_PATH", "config/config.railway.yaml"))
     except (ConfigError, ContentError) as exc:
         raise RuntimeError(f"Startup validation failed: {exc}") from exc
     bot.run(token, log_handler=None)
