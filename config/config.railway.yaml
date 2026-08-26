@@ -1,6 +1,6 @@
 discord:
-  guild_id: 1534037288160329819
-  poll_channel_id: 1534861622214922240
+  guild_id: 1524016102919635075
+  poll_channel_id: 1528285430196342804
   prompt_channel_id: 0
 features:
   invite_code_limit: true
