@@ -1,11 +1,9 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "RAILPACK",
-    "buildCommand": "pip install ."
+    "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "BOT_CONFIG_PATH=config/config.railway.yaml python -m bot.main",
     "restartPolicyType": "ALWAYS"
   }
 }
