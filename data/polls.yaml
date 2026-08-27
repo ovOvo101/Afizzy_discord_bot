@@ -1,121 +1,160 @@
-- id: modern-job
-  title: OC in the city
-  question: If your OC landed in modern life, what job would they accidentally be great at?
-  options: [Coffee shop owner, Librarian, Tattoo artist, Game streamer, Completely unemployed]
-- id: travel-planner
-  title: Travel plans
-  question: When a ship travels together, who makes the itinerary?
-  options: [Person A, Person B, Neither of them, One plans and one ruins it]
-- id: creator-medium
-  title: Make something
-  question: What kind of creative work feels most satisfying today?
-  options: [Drawing, Writing, Photography, Cosplay, Crafting]
-- id: cat-oc
-  title: Cat behavior
-  question: If your OC became a cat, what would they do first?
-  options: [Knock something over, Find the sunniest spot, Demand snacks, Start a tiny war]
-- id: rainy-day
-  title: Rainy scene
-  question: In a rainy-day scene, what is the essential prop?
-  options: [One umbrella, Warm drink, Dramatic window, Wet shoes]
-- id: side-character
-  title: Supporting cast
-  question: Which side character secretly has the best story?
-  options: [The rival, The shopkeeper, The mysterious neighbor, The pet]
-- id: outfit-choice
-  title: Wardrobe emergency
-  question: Your OC must attend a formal event. What goes wrong first?
-  options: [Wrong outfit, Wrong invitation, Wrong date, Wrong building]
-- id: world-secret
-  title: Worldbuilding detail
-  question: What makes a fictional world feel alive fastest?
-  options: [Local food, Strange holidays, Tiny superstitions, Bad public transport]
-- id: meet-cute
-  title: A meeting
-  question: Best place for characters to meet by accident?
-  options: [Convenience store, Library, Train platform, Friend's party]
-- id: villain-break
-  title: Villain time off
-  question: What does a villain do on their day off?
-  options: [Gardens, Does taxes, Watches reality TV, Plans something petty]
-- id: familiar
-  title: Magical companion
-  question: Pick an inconvenient magical familiar.
-  options: [Judgmental crow, Tiny dragon, Ghost cat, Frog with secrets]
-- id: fake-date
-  title: Fake dating rules
-  question: In a fake dating story, who catches feelings first?
-  options: [The planner, The cynic, Both at once, Everyone except them]
-- id: snack
-  title: Character snack
-  question: Which snack says the most about a character?
-  options: [Convenience-store drink, Fancy pastry, Mystery candy, Instant noodles]
-- id: late-message
-  title: 3 AM notification
-  question: A character gets a message at 3 AM. It is from...
-  options: [Their future self, An ex, A stranger, Their pet somehow]
-- id: childhood
-  title: Childhood photo
-  question: What would embarrass your OC most in an old photo?
-  options: [Haircut, Outfit, Hobby, Serious expression]
-- id: powers
-  title: Useless superpower
-  question: Choose a mildly useful superpower.
-  options: [Always know the time, Warm cold tea, Find lost pens, Speak to pigeons]
-- id: coffee-shop
-  title: Coffee shop AU
-  question: Who is most likely to burn the coffee shop down?
-  options: [The owner, The new hire, The regular, The cat]
-- id: apology
-  title: Saying sorry
-  question: How does your character apologize after being dramatic?
-  options: [Gift, Long speech, Awkward silence, Pretends nothing happened]
-- id: treasure
-  title: Treasure chest
-  question: What is the best disappointing treasure?
-  options: [Old coupons, One sock, Love letter, Very pretty rock]
-- id: body-swap
-  title: Body swap
-  question: First priority after a body swap?
-  options: [Find a mirror, Check phone, Panic quietly, Eat their favorite food]
-- id: pet-name
-  title: Nickname energy
-  question: Which nickname is most dangerous?
-  options: [Sunshine, Your Majesty, Bestie, The full legal name]
-- id: magic-school
-  title: Magic school
-  question: What class would your OC skip at magic school?
-  options: [Potion safety, Flying, Ancient runes, Group projects]
-- id: road-trip
-  title: Road trip
-  question: What ends a fictional road trip first?
-  options: [No signal, Bad playlist, Wrong map, Unresolved feelings]
-- id: favorite-room
-  title: A quiet room
-  question: Which room reveals the most about a character?
-  options: [Bedroom, Kitchen, Workshop, Backpack]
-- id: first-impression
-  title: First impression
-  question: Which first impression is hardest to recover from?
-  options: [Walking into a door, Wrong name, Spilling drink, Being too mysterious]
-- id: cursed-item
-  title: Cursed object
-  question: What is the funniest object to discover is cursed?
-  options: [Hairbrush, Toaster, Notebook, Plush toy]
-- id: party-role
-  title: Party role
-  question: At a party, your OC is probably...
-  options: [Hosting, Hiding with the pet, Dancing badly, Leaving early]
-- id: song-scene
-  title: Scene soundtrack
-  question: A perfect scene starts with...
-  options: [One song, One sound effect, Awkward silence, Someone laughing]
-- id: rival-teamup
-  title: Rival team-up
-  question: Why would rivals reluctantly work together?
-  options: [Shared enemy, Rent is due, Lost pet, They made a bet]
-- id: tiny-joy
-  title: Tiny joy
-  question: Which tiny moment belongs in more stories?
-  options: [Sharing snacks, Fixing a sleeve, Waiting for a bus, Falling asleep nearby]
-
+- id: character-becomes-real
+  title: They become real
+  question: Your character suddenly becomes real. What’s the first thing you’d ask them?
+  options:
+    - “Why are you like this 😭”
+    - “Do you remember everything?”
+    - “What do you think of me?”
+    - “Wanna get food?”
+- id: attached-character-type
+  title: Accidental attachment
+  question: Which character type would you accidentally get attached to?
+  options:
+    - The mysterious one 👀
+    - The chaotic one
+    - The soft one
+    - The “I can fix them” one 💀
+- id: ideal-character-energy
+  title: Character energy
+  question: Pick your ideal character energy
+  options:
+    - 🧸 Comforting
+    - 😈 Chaotic
+    - 🧊 Cold but secretly soft
+    - ✨ Flirty & confident
+- id: character-who
+  title: Would you rather
+  question: Would you rather have a character who…
+  options:
+    - Always agrees with you
+    - Always challenges you
+    - Roasts you constantly
+    - Somehow knows exactly what to say
+- id: story-setting
+  title: Dropped into a story
+  question: You get dropped into a random story. What setting are you hoping for?
+  options:
+    - Fantasy kingdom 🏰
+    - College campus 🎓
+    - Detective mystery 🔎
+    - Cozy little town ☕
+- id: ruin-dramatic-moment
+  title: Ruined moment
+  question: What would absolutely ruin your character’s dramatic moment?
+  options:
+    - Someone starts laughing
+    - Their phone rings 📱
+    - They forget their line
+    - A random NPC walks in
+- id: main-character-moment
+  title: Main character moment
+  question: Choose your character’s main character moment
+  options:
+    - Walking into a party late
+    - Saving everyone at the last second
+    - Dropping the coldest one-liner
+    - Disappearing mysteriously 👀
+- id: life-genre
+  title: Accidental genre
+  question: If your life was a story, what genre would it accidentally become?
+  options:
+    - Comedy
+    - Romance
+    - Mystery
+    - Absolute chaos
+- id: one-superpower
+  title: One superpower
+  question: If you could give a character ONE superpower, what are you choosing?
+  options:
+    - Read minds
+    - Time travel
+    - Teleportation
+    - Control dreams
+- id: rather-live-in
+  title: Where to live
+  question: Would you rather live in…
+  options:
+    - Your favorite fictional world
+    - A world where every character is real
+    - A world where you can rewrite anything
+    - Our boring reality 😭
+- id: dream-world-feature
+  title: Dream world feature
+  question: You can add one feature to your dream fictional world. What is it?
+  options:
+    - Everyone has a soundtrack 🎵
+    - Unlimited adventures
+    - Magic is real
+    - Characters never forget you
+- id: survive-character-world
+  title: Survival time
+  question: "Be honest: how long would you survive in your favorite character’s world?"
+  options:
+    - 5 minutes 💀
+    - 1 day
+    - A week maybe
+    - I AM the main character
+- id: we-need-to-talk
+  title: We need to talk
+  question: Your character sends you “we need to talk.” What do you assume happened?
+  options:
+    - I’m in trouble 😭
+    - They’re confessing something
+    - I definitely did something
+    - Nothing good is coming
+- id: character-red-flag
+  title: Character red flag
+  question: What’s the biggest red flag in a fictional character? 👀
+  options:
+    - “I can fix them” energy
+    - Knows too much
+    - Never explains anything
+    - Says “trust me”
+- id: chat-one-month
+  title: One month, one type
+  question: You can only chat with ONE type of character for a month.
+  options:
+    - Best friend
+    - Rival
+    - Mysterious stranger
+    - Chaos gremlin
+- id: more-dangerous
+  title: More dangerous
+  question: What’s more dangerous?
+  options:
+    - “Just one more message”
+    - “I’ll make one more character”
+    - “Let me try this prompt”
+    - “I’ll sleep after this scene” 💀
+- id: keep-talking
+  title: Keep talking
+  question: What makes you want to keep talking to a character?
+  options:
+    - They’re funny
+    - They remember little things
+    - Their personality feels real
+    - The story keeps getting better
+- id: instantly-interesting
+  title: Instantly interesting
+  question: What makes a character instantly interesting?
+  options:
+    - A mysterious backstory
+    - Strong personality
+    - Unexpected reactions
+    - Good banter 👀
+- id: more-important
+  title: What matters most
+  question: Which is more important in a character?
+  options:
+    - Personality
+    - Memory
+    - Story
+    - The vibes ✨
+- id: three-hour-chat
+  title: 3-hour chat
+  question: What kind of conversation can accidentally turn into a 3-hour chat?
+  options:
+    - Deep life talks
+    - Random nonsense
+    - Story/roleplay
+    - “Wait… what if…” conversations
