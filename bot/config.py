@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -34,6 +35,34 @@ class FeatureConfig:
     daily_poll: bool
     daily_prompt: bool
     idea: bool
+    feedback_archive: bool
+
+
+FEEDBACK_FIELD_KEYS = (
+    "username",
+    "message_time",
+    "original_message",
+    "message_link",
+    "detected_language",
+    "chinese_translation",
+    "message_id",
+    "channel_id",
+)
+
+
+@dataclass(frozen=True)
+class FeedbackChannelConfig:
+    channel_id: int
+    app_token: str
+    table_id: str
+    fields: dict[str, str]
+
+
+@dataclass(frozen=True)
+class FeedbackConfig:
+    deepl_api_url: str
+    request_timeout_seconds: int
+    channels: tuple[FeedbackChannelConfig, ...]
 
 
 @dataclass(frozen=True)
@@ -41,6 +70,7 @@ class Settings:
     discord: DiscordConfig
     schedule: ScheduleConfig
     features: FeatureConfig
+    feedback: FeedbackConfig
     database_path: Path
     polls_path: Path
     prompts_path: Path
@@ -115,9 +145,10 @@ def load_settings(path: str | Path) -> Settings:
     storage = payload.get("storage", {})
     content = payload.get("content", {})
     features = payload.get("features", {})
+    feedback = payload.get("feedback", {})
     if not all(
         isinstance(section, dict)
-        for section in (discord, scheduling, storage, content, features)
+        for section in (discord, scheduling, storage, content, features, feedback)
     ):
         raise ConfigError("Config sections must be mappings")
     try:
@@ -132,6 +163,58 @@ def load_settings(path: str | Path) -> Settings:
         if not isinstance(value, str) or not value:
             raise ConfigError(f"{name} is required")
         return root / value
+    feedback_enabled = _boolean(
+        features.get("feedback_archive"), "features.feedback_archive", False
+    )
+    raw_channels = feedback.get("channels", [])
+    if not isinstance(raw_channels, list):
+        raise ConfigError("feedback.channels must be a list")
+    feedback_channels: list[FeedbackChannelConfig] = []
+    seen_channel_ids: set[int] = set()
+    for index, item in enumerate(raw_channels):
+        prefix = f"feedback.channels[{index}]"
+        if not isinstance(item, dict):
+            raise ConfigError(f"{prefix} must be a mapping")
+        channel_id = _optional_positive_int(item.get("channel_id"), f"{prefix}.channel_id")
+        if channel_id is None:
+            raise ConfigError(f"{prefix}.channel_id is required")
+        if channel_id in seen_channel_ids:
+            raise ConfigError(f"Duplicate feedback channel_id: {channel_id}")
+        seen_channel_ids.add(channel_id)
+        app_token, table_id, fields = item.get("app_token"), item.get("table_id"), item.get("fields")
+        if not isinstance(app_token, str) or not app_token:
+            raise ConfigError(f"{prefix}.app_token is required")
+        if not isinstance(table_id, str) or not table_id:
+            raise ConfigError(f"{prefix}.table_id is required")
+        if not isinstance(fields, dict):
+            raise ConfigError(f"{prefix}.fields must be a mapping")
+        if set(fields) != set(FEEDBACK_FIELD_KEYS) or not all(
+            isinstance(value, str) and value for value in fields.values()
+        ):
+            raise ConfigError(
+                f"{prefix}.fields must contain exactly: {', '.join(FEEDBACK_FIELD_KEYS)}"
+            )
+        if len(set(fields.values())) != len(FEEDBACK_FIELD_KEYS):
+            raise ConfigError(f"{prefix}.fields must map to distinct Feishu columns")
+        feedback_channels.append(
+            FeedbackChannelConfig(channel_id, app_token, table_id, dict(fields))
+        )
+    if feedback_enabled and not feedback_channels:
+        raise ConfigError("feedback.channels is required when feedback_archive is enabled")
+    timeout = feedback.get("request_timeout_seconds", 15)
+    if not isinstance(timeout, int) or not 1 <= timeout <= 120:
+        raise ConfigError("feedback.request_timeout_seconds must be between 1 and 120")
+    api_url = feedback.get("deepl_api_url", "https://api-free.deepl.com")
+    if not isinstance(api_url, str) or not api_url.startswith("https://"):
+        raise ConfigError("feedback.deepl_api_url must be an HTTPS URL")
+    if feedback_enabled:
+        missing = [
+            name
+            for name in ("DEEPL_API_KEY", "FEISHU_APP_ID", "FEISHU_APP_SECRET")
+            if not os.getenv(name)
+        ]
+        if missing:
+            raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
     return Settings(
         discord=DiscordConfig(
             _optional_positive_int(discord.get("guild_id"), "guild_id"),
@@ -157,7 +240,9 @@ def load_settings(path: str | Path) -> Settings:
                 features.get("daily_prompt"), "features.daily_prompt", False
             ),
             idea=_boolean(features.get("idea"), "features.idea", False),
+            feedback_archive=feedback_enabled,
         ),
+        feedback=FeedbackConfig(api_url.rstrip("/"), timeout, tuple(feedback_channels)),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),
         prompts_path=resolve(content.get("prompts_path"), "content.prompts_path"),

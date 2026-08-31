@@ -1,0 +1,39 @@
+discord:
+  guild_id: 1534037288160329819
+  poll_channel_id: 0
+  prompt_channel_id: 0
+  invite_code_channel_id: 0
+features:
+  invite_code_limit: false
+  daily_poll: false
+  daily_prompt: false
+  idea: false
+  feedback_archive: true
+feedback:
+  deepl_api_url: https://api-free.deepl.com
+  request_timeout_seconds: 15
+  channels:
+    - channel_id: 1534037288617775287
+      app_token: HBCibNKNTatMPXs1TBUctQlkn7g
+      table_id: tblszbuWoUTfa8SG
+      fields:
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 翻译
+        message_id: 消息ID
+        channel_id: 频道ID
+scheduling:
+  timezone: Asia/Shanghai
+  poll_time: "18:00"
+  poll_weekdays: [wednesday, friday, sunday]
+  prompt_time: "20:00"
+  poll_duration_hours: 24
+storage:
+  database_path: /data/bot.sqlite3
+content:
+  polls_path: data/polls.yaml
+  prompts_path: data/prompts.yaml
+  ideas_path: data/ideas.yaml

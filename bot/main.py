@@ -9,6 +9,7 @@ from discord import app_commands
 from .config import ConfigError, Settings, load_settings
 from .content import ContentError
 from .database import Database
+from .feedback import FeedbackArchive
 from .inspiration import InspirationFeature
 from .invite_code import InviteCodeLimiter
 
@@ -39,6 +40,11 @@ class CreativeBot(discord.Client):
             )
             else None
         )
+        self.feedback = (
+            FeedbackArchive(self, settings, database)
+            if settings.features.feedback_archive
+            else None
+        )
 
     async def setup_hook(self) -> None:
         if self.settings.discord.guild_id:
@@ -49,16 +55,22 @@ class CreativeBot(discord.Client):
             await self.tree.sync()
         if self.inspiration:
             self.inspiration.start()
+        if self.feedback:
+            await self.feedback.start()
 
     async def on_message(self, message: discord.Message) -> None:
         if self.invite_code:
             await self.invite_code.handle(message)
         if self.inspiration:
             await self.inspiration.on_message(message)
+        if self.feedback:
+            await self.feedback.on_message(message)
 
     async def close(self) -> None:
         if self.inspiration:
             self.inspiration.stop()
+        if self.feedback:
+            await self.feedback.stop()
         self.database.close()
         await super().close()
 

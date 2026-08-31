@@ -8,6 +8,11 @@ features:
   daily_poll: false
   daily_prompt: false
   idea: false
+  feedback_archive: false
+feedback:
+  deepl_api_url: https://api-free.deepl.com
+  request_timeout_seconds: 15
+  channels: []
 scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"

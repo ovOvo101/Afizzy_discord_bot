@@ -10,6 +10,6 @@ COPY bot ./bot
 RUN pip install --no-cache-dir .
 
 COPY data ./data
-COPY config/config.railway.yaml ./config/config.railway.yaml
+COPY config ./config
 
 CMD ["python", "-m", "bot.main"]

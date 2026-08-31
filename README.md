@@ -25,6 +25,8 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 - `scheduling.poll_weekdays`: selects the weekdays when polls are published.
 - `features.daily_prompt`: enables scheduled daily prompts.
 - `features.idea`: enables the `/idea` command.
+- `features.feedback_archive`: translates configured feedback channels and archives them to
+  Feishu Bitable.
 - `data/polls.yaml`, `data/prompts.yaml`, and `data/ideas.yaml`: inspiration content retained for
   future use.
 
@@ -39,3 +41,40 @@ python -m ruff check bot tests
 ```
 
 Production status and logs are available in the Railway project dashboard.
+
+## Feedback archive configuration
+
+Enable the feature and add one entry per Discord channel. Each channel may target a different
+Feishu Bitable. Columns must be text except `message_time` (date/time) and `message_link` (URL):
+
+```yaml
+features:
+  feedback_archive: true
+feedback:
+  deepl_api_url: https://api-free.deepl.com  # use https://api.deepl.com for DeepL Pro
+  request_timeout_seconds: 15
+  channels:
+    - channel_id: 123456789012345678
+      app_token: basxxxxxxxxxxxx
+      table_id: tblxxxxxxxxxxxx
+      fields:
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 中文翻译
+        message_id: Discord消息ID
+        channel_id: 频道ID
+```
+
+Set `DEEPL_API_KEY`, `FEISHU_APP_ID`, and `FEISHU_APP_SECRET` as Railway secrets before
+enabling the feature. `DISCORD_TOKEN` remains required. The Feishu custom app must have Bitable
+record write access to every configured table. Failed jobs persist in SQLite across restarts,
+so keep the Railway Volume mounted at `/data`.
+
+The archive is silent: it never replies to Discord messages. Messages from members with a role
+named `staff` (case-insensitive) are ignored.
+
+For the temporary test server, set Railway `BOT_CONFIG_PATH=config/config.test.yaml`. Restore
+`BOT_CONFIG_PATH=config/config.railway.yaml` after testing, then remove `config/config.test.yaml`.

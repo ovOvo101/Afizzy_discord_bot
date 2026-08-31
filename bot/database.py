@@ -31,6 +31,26 @@ class Database:
           message_id INTEGER NOT NULL, created_at TEXT NOT NULL,
           PRIMARY KEY(guild_id, channel_id, user_id)
         );
+        CREATE TABLE IF NOT EXISTS feedback_tasks (
+          message_id INTEGER PRIMARY KEY,
+          guild_id INTEGER NOT NULL,
+          channel_id INTEGER NOT NULL,
+          username TEXT NOT NULL,
+          message_time TEXT NOT NULL,
+          original_message TEXT NOT NULL,
+          message_link TEXT NOT NULL,
+          detected_language TEXT,
+          chinese_translation TEXT,
+          feishu_record_id TEXT,
+          acknowledged INTEGER NOT NULL DEFAULT 0,
+          attempts INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT NOT NULL,
+          last_error TEXT,
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS feedback_tasks_due
+          ON feedback_tasks(next_attempt_at)
+          WHERE acknowledged = 0;
         """)
         self.connection.commit()
 
@@ -41,6 +61,102 @@ class Database:
         cursor = self.connection.execute("INSERT OR IGNORE INTO publications(kind, local_date, content_id, created_at) VALUES (?, ?, ?, ?)", (kind, local_date, content_id, datetime.now(UTC).isoformat()))
         self.connection.commit()
         return cursor.rowcount == 1
+
+    def claim_feedback(
+        self,
+        message_id: int,
+        guild_id: int,
+        channel_id: int,
+        username: str,
+        message_time: datetime,
+        original_message: str,
+        message_link: str,
+    ) -> bool:
+        now = datetime.now(UTC).isoformat()
+        cursor = self.connection.execute(
+            """
+            INSERT OR IGNORE INTO feedback_tasks(
+              message_id, guild_id, channel_id, username, message_time,
+              original_message, message_link, next_attempt_at, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                message_id,
+                guild_id,
+                channel_id,
+                username,
+                message_time.astimezone(UTC).isoformat(),
+                original_message,
+                message_link,
+                now,
+                now,
+            ),
+        )
+        self.connection.commit()
+        return cursor.rowcount == 1
+
+    def due_feedback(self, now: datetime, limit: int = 20) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            SELECT * FROM feedback_tasks
+            WHERE acknowledged = 0 AND next_attempt_at <= ?
+            ORDER BY next_attempt_at, created_at LIMIT ?
+            """,
+            (now.astimezone(UTC).isoformat(), limit),
+        ).fetchall()
+
+    def save_feedback_translation(
+        self, message_id: int, detected_language: str, translation: str
+    ) -> None:
+        self.connection.execute(
+            """
+            UPDATE feedback_tasks
+            SET detected_language = ?, chinese_translation = ?, last_error = NULL
+            WHERE message_id = ?
+            """,
+            (detected_language, translation, message_id),
+        )
+        self.connection.commit()
+
+    def mark_feedback_delivered(self, message_id: int, record_id: str) -> None:
+        self.connection.execute(
+            """
+            UPDATE feedback_tasks
+            SET feishu_record_id = ?, last_error = NULL, next_attempt_at = ?
+            WHERE message_id = ?
+            """,
+            (record_id, datetime.now(UTC).isoformat(), message_id),
+        )
+        self.connection.commit()
+
+    def mark_feedback_acknowledged(self, message_id: int) -> None:
+        self.connection.execute(
+            "UPDATE feedback_tasks SET acknowledged = 1, last_error = NULL WHERE message_id = ?",
+            (message_id,),
+        )
+        self.connection.commit()
+
+    def defer_feedback(self, message_id: int, error: str, now: datetime) -> None:
+        row = self.connection.execute(
+            "SELECT attempts FROM feedback_tasks WHERE message_id = ?", (message_id,)
+        ).fetchone()
+        attempts = int(row["attempts"]) + 1
+        delays = (60, 120, 240, 480, 960)
+        delay = delays[attempts - 1] if attempts <= len(delays) else 3600
+        next_attempt = now.astimezone(UTC).timestamp() + delay
+        self.connection.execute(
+            """
+            UPDATE feedback_tasks
+            SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE message_id = ?
+            """,
+            (
+                attempts,
+                datetime.fromtimestamp(next_attempt, UTC).isoformat(),
+                error[:1000],
+                message_id,
+            ),
+        )
+        self.connection.commit()
 
     def abandon_publication(self, kind: str, local_date: str) -> None:
         self.connection.execute("DELETE FROM publications WHERE kind = ? AND local_date = ? AND message_id IS NULL", (kind, local_date))
