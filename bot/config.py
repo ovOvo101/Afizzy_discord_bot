@@ -62,6 +62,8 @@ class FeedbackChannelConfig:
 class FeedbackConfig:
     deepl_api_url: str
     request_timeout_seconds: int
+    backfill_days: int
+    excluded_usernames: tuple[str, ...]
     channels: tuple[FeedbackChannelConfig, ...]
 
 
@@ -207,6 +209,17 @@ def load_settings(path: str | Path) -> Settings:
     api_url = feedback.get("deepl_api_url", "https://api-free.deepl.com")
     if not isinstance(api_url, str) or not api_url.startswith("https://"):
         raise ConfigError("feedback.deepl_api_url must be an HTTPS URL")
+    backfill_days = feedback.get("backfill_days", 0)
+    if not isinstance(backfill_days, int) or not 0 <= backfill_days <= 30:
+        raise ConfigError("feedback.backfill_days must be between 0 and 30")
+    raw_excluded = feedback.get("excluded_usernames", [])
+    if not isinstance(raw_excluded, list) or not all(
+        isinstance(name, str) and name.strip() for name in raw_excluded
+    ):
+        raise ConfigError("feedback.excluded_usernames must be a list of usernames")
+    excluded_usernames = tuple(name.strip().casefold() for name in raw_excluded)
+    if len(set(excluded_usernames)) != len(excluded_usernames):
+        raise ConfigError("feedback.excluded_usernames must not contain duplicates")
     if feedback_enabled:
         missing = [
             name
@@ -242,7 +255,13 @@ def load_settings(path: str | Path) -> Settings:
             idea=_boolean(features.get("idea"), "features.idea", False),
             feedback_archive=feedback_enabled,
         ),
-        feedback=FeedbackConfig(api_url.rstrip("/"), timeout, tuple(feedback_channels)),
+        feedback=FeedbackConfig(
+            api_url.rstrip("/"),
+            timeout,
+            backfill_days,
+            excluded_usernames,
+            tuple(feedback_channels),
+        ),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),
         prompts_path=resolve(content.get("prompts_path"), "content.prompts_path"),

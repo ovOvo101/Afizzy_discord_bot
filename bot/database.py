@@ -51,6 +51,11 @@ class Database:
         CREATE INDEX IF NOT EXISTS feedback_tasks_due
           ON feedback_tasks(next_attempt_at)
           WHERE acknowledged = 0;
+        CREATE TABLE IF NOT EXISTS feedback_backfills (
+          channel_id INTEGER PRIMARY KEY,
+          backfill_days INTEGER NOT NULL,
+          completed_at TEXT NOT NULL
+        );
         """)
         self.connection.commit()
 
@@ -155,6 +160,22 @@ class Database:
                 error[:1000],
                 message_id,
             ),
+        )
+        self.connection.commit()
+
+    def feedback_backfill_completed(self, channel_id: int) -> bool:
+        row = self.connection.execute(
+            "SELECT 1 FROM feedback_backfills WHERE channel_id = ?", (channel_id,)
+        ).fetchone()
+        return row is not None
+
+    def mark_feedback_backfill_completed(self, channel_id: int, backfill_days: int) -> None:
+        self.connection.execute(
+            """
+            INSERT OR REPLACE INTO feedback_backfills(channel_id, backfill_days, completed_at)
+            VALUES (?, ?, ?)
+            """,
+            (channel_id, backfill_days, datetime.now(UTC).isoformat()),
         )
         self.connection.commit()
 

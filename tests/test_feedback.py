@@ -123,3 +123,19 @@ async def test_staff_messages_are_ignored(tmp_path: Path, monkeypatch: object) -
     count = database.connection.execute("SELECT COUNT(*) FROM feedback_tasks").fetchone()[0]
     assert count == 0
     database.close()
+
+
+async def test_excluded_username_is_ignored(tmp_path: Path, monkeypatch: object) -> None:
+    configured = settings(tmp_path, monkeypatch)
+    object.__setattr__(configured.feedback, "excluded_usernames", ("itsafizzy",))
+    database = Database(tmp_path / "feedback.sqlite3")
+    database.initialize()
+    archive = FeedbackArchive(SimpleNamespace(), configured, database)  # type: ignore[arg-type]
+    message = discord_message()
+    message.author.name = "ItsAFizzy"
+
+    await archive.on_message(message)  # type: ignore[arg-type]
+
+    count = database.connection.execute("SELECT COUNT(*) FROM feedback_tasks").fetchone()[0]
+    assert count == 0
+    database.close()

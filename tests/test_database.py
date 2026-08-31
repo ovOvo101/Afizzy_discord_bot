@@ -65,6 +65,15 @@ def test_feedback_claim_is_idempotent_and_retries(tmp_path: Path) -> None:
     database.close()
 
 
+def test_feedback_backfill_completion_is_persistent(tmp_path: Path) -> None:
+    database = Database(tmp_path / "bot.sqlite3")
+    database.initialize()
+    assert not database.feedback_backfill_completed(10)
+    database.mark_feedback_backfill_completed(10, 7)
+    assert database.feedback_backfill_completed(10)
+    database.close()
+
+
 def test_invite_code_channel_allows_one_message_per_user(tmp_path: Path) -> None:
     database = Database(tmp_path / "bot.sqlite3")
     database.initialize()

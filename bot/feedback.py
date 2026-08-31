@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import logging
 import os
 import time
@@ -140,31 +140,44 @@ class FeedbackArchive:
         self.settings = settings
         self.database = database
         self.channels = {item.channel_id: item for item in settings.feedback.channels}
+        self.excluded_usernames = set(settings.feedback.excluded_usernames)
         self.api = FeedbackApiClient(settings)
+        self._backfill_task: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         await self.api.start()
         self.process_pending.start()
+        if self.settings.feedback.backfill_days:
+            self._backfill_task = asyncio.create_task(self._backfill())
 
     async def stop(self) -> None:
         self.process_pending.cancel()
+        if self._backfill_task is not None:
+            self._backfill_task.cancel()
         await self.api.close()
 
     async def on_message(self, message: discord.Message) -> None:
         if message.channel.id not in self.channels:
             return
-        if (
+        if self._should_ignore(message):
+            return
+        self._queue_message(message)
+
+    def _should_ignore(self, message: discord.Message) -> bool:
+        return (
             message.guild is None
             or message.author.bot
             or message.webhook_id is not None
             or message.type not in {discord.MessageType.default, discord.MessageType.reply}
             or not message.content.strip()
+            or message.author.name.casefold() in self.excluded_usernames
             or any(
                 role.name.casefold() == "staff"
                 for role in getattr(message.author, "roles", ())
             )
-        ):
-            return
+        )
+
+    def _queue_message(self, message: discord.Message) -> None:
         attachment_urls = [attachment.url for attachment in message.attachments]
         original = message.content
         if attachment_urls:
@@ -180,6 +193,46 @@ class FeedbackArchive:
         )
         if claimed:
             LOGGER.info("Queued Discord feedback message %s", message.id)
+
+    async def _backfill(self) -> None:
+        await self.bot.wait_until_ready()
+        after = datetime.now(UTC) - timedelta(days=self.settings.feedback.backfill_days)
+        pending = set(self.channels)
+        while pending:
+            for channel_id in tuple(pending):
+                if self.database.feedback_backfill_completed(channel_id):
+                    pending.remove(channel_id)
+                    continue
+                try:
+                    channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
+                        channel_id
+                    )
+                    if not hasattr(channel, "history"):
+                        raise RuntimeError(f"Discord channel {channel_id} has no message history")
+                    queued = 0
+                    async for message in channel.history(
+                        after=after, oldest_first=True, limit=None
+                    ):
+                        if not self._should_ignore(message):
+                            self._queue_message(message)
+                            queued += 1
+                    self.database.mark_feedback_backfill_completed(
+                        channel_id, self.settings.feedback.backfill_days
+                    )
+                    pending.remove(channel_id)
+                    LOGGER.info(
+                        "Completed %s-day feedback backfill for channel %s "
+                        "(%s eligible messages)",
+                        self.settings.feedback.backfill_days,
+                        channel_id,
+                        queued,
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    LOGGER.exception("Feedback backfill failed for channel %s", channel_id)
+            if pending:
+                await asyncio.sleep(300)
 
     @tasks.loop(seconds=5)
     async def process_pending(self) -> None:

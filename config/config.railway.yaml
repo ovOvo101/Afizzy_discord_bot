@@ -8,11 +8,37 @@ features:
   daily_poll: false
   daily_prompt: false
   idea: false
-  feedback_archive: false
+  feedback_archive: true
 feedback:
   deepl_api_url: https://api-free.deepl.com
   request_timeout_seconds: 15
-  channels: []
+  backfill_days: 7
+  excluded_usernames: [itsafizzy]
+  channels:
+    - channel_id: 1528287822467825725
+      app_token: HBCibNKNTatMPXs1TBUctQlkn7g
+      table_id: tbl82RVXLDVrRI6h
+      fields:
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 翻译
+        message_id: 消息ID
+        channel_id: 频道ID
+    - channel_id: 1528288141507559484
+      app_token: HBCibNKNTatMPXs1TBUctQlkn7g
+      table_id: tblszbuWoUTfa8SG
+      fields:
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 翻译
+        message_id: 消息ID
+        channel_id: 频道ID
 scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"
