@@ -200,9 +200,10 @@ class FeedbackApiClient:
             if attempt == 0 and (response.status == 401 or code in {99991663, 99991664, 99991668}):
                 continue
             if response.status != 200 or code != 0:
+                detail = str(payload.get("msg", "unknown"))[:300]
                 raise ApiError(
                     f"Feishu record request failed with HTTP {response.status}, "
-                    f"code {code}"
+                    f"code {code}, message {detail}"
                 )
             try:
                 return str(payload["data"]["record"]["record_id"])
