@@ -287,6 +287,4 @@ class FeedbackAnalyzer:
             names["source_channel_ids"]: ", ".join(
                 sorted({str(row["channel_id"]) for row in source_rows})
             ),
-            names["analysis_batch"]: f"{run['local_date']}#{run['id']}",
-            names["model"]: self._model(),
         }

@@ -82,8 +82,6 @@ ANALYSIS_FIELD_KEYS = (
     "source_message_ids",
     "source_message_links",
     "source_channel_ids",
-    "analysis_batch",
-    "model",
 )
 
 

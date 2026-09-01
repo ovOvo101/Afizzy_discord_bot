@@ -22,8 +22,6 @@ FIELDS = {
     "source_message_ids": "来源消息ID",
     "source_message_links": "来源消息链接",
     "source_channel_ids": "来源频道ID",
-    "analysis_batch": "分析批次",
-    "model": "模型",
 }
 
 

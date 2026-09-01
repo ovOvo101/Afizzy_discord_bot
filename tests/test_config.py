@@ -19,8 +19,6 @@ ANALYSIS_FIELDS = {
     "source_message_ids": "Message IDs",
     "source_message_links": "Links",
     "source_channel_ids": "Channels",
-    "analysis_batch": "Batch",
-    "model": "Model",
 }
 
 
