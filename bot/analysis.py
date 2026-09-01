@@ -268,9 +268,11 @@ class FeedbackAnalyzer:
         names = self.settings.feedback_analysis.fields
         source_ids = item["source_message_ids"]
         source_rows = [messages[value] for value in source_ids]
+        source_times = [datetime.fromisoformat(row["message_time"]) for row in source_rows]
+        first_message_time_ms = int(min(source_times).timestamp() * 1000)
         return {
             names["number"]: str(item_row["id"]),
-            names["dates"]: item["dates"],
+            names["dates"]: first_message_time_ms,
             names["category"]: item["category"],
             names["user_feedback"]: item["user_feedback"],
             names["suggested_solution"]: item["suggested_solution"],
