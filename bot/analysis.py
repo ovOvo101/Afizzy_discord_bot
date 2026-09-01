@@ -21,11 +21,10 @@ PRIORITIES = ("🔴 P0", "🔴 P1", "🟡 P2", "⚪ Idea", "🟢 Community")
 ANALYSIS_INSTRUCTIONS = """你是 Afizzy 的产品反馈分析员。把 Discord 用户消息整理成产品团队可审核的需求：
 1. 提炼真实问题，不照抄原文；过滤闲聊、致谢和 Staff 回复。
 2. 合并本批次中本质相同的反馈，并列出全部日期和用户。
-3. 与提供的全部历史分析比较；如果相似，仍生成待审核的新条目，并填写 possible_duplicate 和 duplicate_reason，不要修改历史条目。
-4. Category 使用简洁的产品领域名称。Suggested Solution 必须具体可执行。
-5. Priority 只能是 🔴 P0、🔴 P1、🟡 P2、⚪ Idea、🟢 Community。
-6. source_message_ids 必须只使用输入中出现的 Discord 消息 ID。没有有效产品反馈时返回空 items。
-7. 除用户名、消息 ID 和专有名词外，所有分析字段默认使用简体中文。产品名、功能名、品牌名、技术术语和社区惯用表达（例如 fizz）保留原始英文及原有大小写，不要强行翻译。
+3. Category 使用简洁的产品领域名称。Suggested Solution 必须具体可执行。
+4. Priority 只能是 🔴 P0、🔴 P1、🟡 P2、⚪ Idea、🟢 Community。
+5. source_message_ids 必须只使用输入中出现的 Discord 消息 ID。没有有效产品反馈时返回空 items。
+6. 除用户名、消息 ID 和专有名词外，所有分析字段默认使用简体中文。产品名、功能名、品牌名、技术术语和社区惯用表达（例如 fizz）保留原始英文及原有大小写，不要强行翻译。
 只返回符合 JSON Schema 的结果。"""
 
 
@@ -39,8 +38,6 @@ def _response_schema() -> dict[str, Any]:
             "suggested_solution": {"type": "string"},
             "users": {"type": "string"},
             "priority": {"type": "string", "enum": list(PRIORITIES)},
-            "possible_duplicate": {"type": "string"},
-            "duplicate_reason": {"type": "string"},
             "source_message_ids": {
                 "type": "array",
                 "items": {"type": "string"},
@@ -54,8 +51,6 @@ def _response_schema() -> dict[str, Any]:
             "suggested_solution",
             "users",
             "priority",
-            "possible_duplicate",
-            "duplicate_reason",
             "source_message_ids",
         ],
         "additionalProperties": False,
@@ -280,8 +275,6 @@ class FeedbackAnalyzer:
             names["users"]: item["users"],
             names["priority"]: item["priority"],
             names["review_status"]: "待审核",
-            names["possible_duplicate"]: item["possible_duplicate"],
-            names["duplicate_reason"]: item["duplicate_reason"],
             names["source_message_ids"]: ", ".join(source_ids),
             names["source_message_links"]: "\n".join(row["message_link"] for row in source_rows),
             names["source_channel_ids"]: ", ".join(

@@ -14,8 +14,6 @@ ANALYSIS_FIELDS = {
     "users": "User",
     "priority": "Priority",
     "review_status": "Review",
-    "possible_duplicate": "Duplicate",
-    "duplicate_reason": "Reason",
     "source_message_ids": "Message IDs",
     "source_message_links": "Links",
     "source_channel_ids": "Channels",

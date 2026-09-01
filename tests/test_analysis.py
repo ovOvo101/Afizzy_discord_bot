@@ -17,8 +17,6 @@ FIELDS = {
     "users": "User",
     "priority": "Priority",
     "review_status": "审核状态",
-    "possible_duplicate": "疑似重复目标",
-    "duplicate_reason": "重复判断说明",
     "source_message_ids": "来源消息ID",
     "source_message_links": "来源消息链接",
     "source_channel_ids": "来源频道ID",
@@ -113,8 +111,6 @@ async def test_analysis_is_saved_before_feishu_write(
         "suggested_solution": "增加角色搜索入口。",
         "users": "alice",
         "priority": "🔴 P0",
-        "possible_duplicate": "",
-        "duplicate_reason": "",
         "source_message_ids": ["100"],
     }
     analyzer._analyze = AsyncMock(  # type: ignore[method-assign]

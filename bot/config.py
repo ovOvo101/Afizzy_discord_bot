@@ -87,8 +87,6 @@ ANALYSIS_FIELD_KEYS = (
     "users",
     "priority",
     "review_status",
-    "possible_duplicate",
-    "duplicate_reason",
     "source_message_ids",
     "source_message_links",
     "source_channel_ids",

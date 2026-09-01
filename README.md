@@ -107,7 +107,7 @@ Classified channels additionally require `SILICONFLOW_API_KEY` and `SILICONFLOW_
 
 Create a new table in the same Feishu Base before enabling this feature. Add `ID`, `Date`,
 `Category`, `User Feedback`, `Suggested Solution`, `User`, `Priority`, `审核状态`,
-`疑似重复目标`, `重复判断说明`, `来源消息ID`, `来源消息链接`, and `来源频道ID`. `Date` is a
+`来源消息ID`, `来源消息链接`, and `来源频道ID`. `Date` is a
 date/time field; the others are text fields.
 
 Copy the new table ID from its URL into `feedback_analysis.table_id`, set
@@ -117,9 +117,8 @@ Copy the new table ID from its URL into `feedback_analysis.table_id`, set
 `scheduling.timezone`. On its first run it analyzes every successfully archived SQLite feedback
 message; later runs only include messages that have not appeared in an earlier analysis run.
 
-Results are always appended with `审核状态=待审核`. Similar historical requests are identified
-in the duplicate fields but never overwritten automatically. SiliconFlow and Feishu stages are
-persisted separately, so a Feishu retry does not call SiliconFlow again. Image attachments are
+Results are always appended with `审核状态=待审核`. SiliconFlow and Feishu stages are persisted
+separately, so a Feishu retry does not call SiliconFlow again. Image attachments are
 refreshed from Discord at analysis time and used as visual inputs when available.
 Select a SiliconFlow model that supports both image input and structured outputs.
 
