@@ -60,12 +60,22 @@ class FeedbackChannelConfig:
 
 
 @dataclass(frozen=True)
+class ClassifiedFeedbackChannelConfig:
+    channel_id: int
+    app_token: str
+    idea_table_id: str
+    bug_table_id: str
+    fields: dict[str, str]
+
+
+@dataclass(frozen=True)
 class FeedbackConfig:
     deepl_api_url: str
     request_timeout_seconds: int
     backfill_days: int
     excluded_usernames: tuple[str, ...]
     channels: tuple[FeedbackChannelConfig, ...]
+    classified_channels: tuple[ClassifiedFeedbackChannelConfig, ...]
 
 
 ANALYSIS_FIELD_KEYS = (
@@ -206,6 +216,7 @@ def load_settings(path: str | Path) -> Settings:
     if not isinstance(raw_channels, list):
         raise ConfigError("feedback.channels must be a list")
     feedback_channels: list[FeedbackChannelConfig] = []
+    classified_feedback_channels: list[ClassifiedFeedbackChannelConfig] = []
     seen_channel_ids: set[int] = set()
     for index, item in enumerate(raw_channels):
         prefix = f"feedback.channels[{index}]"
@@ -235,8 +246,54 @@ def load_settings(path: str | Path) -> Settings:
         feedback_channels.append(
             FeedbackChannelConfig(channel_id, app_token, table_id, dict(fields))
         )
-    if feedback_enabled and not feedback_channels:
-        raise ConfigError("feedback.channels is required when feedback_archive is enabled")
+    raw_classified_channels = feedback.get("classified_channels", [])
+    if not isinstance(raw_classified_channels, list):
+        raise ConfigError("feedback.classified_channels must be a list")
+    for index, item in enumerate(raw_classified_channels):
+        prefix = f"feedback.classified_channels[{index}]"
+        if not isinstance(item, dict):
+            raise ConfigError(f"{prefix} must be a mapping")
+        channel_id = _optional_positive_int(item.get("channel_id"), f"{prefix}.channel_id")
+        if channel_id is None:
+            raise ConfigError(f"{prefix}.channel_id is required")
+        if channel_id in seen_channel_ids:
+            raise ConfigError(f"Duplicate feedback channel_id: {channel_id}")
+        seen_channel_ids.add(channel_id)
+        app_token = item.get("app_token")
+        idea_table_id = item.get("idea_table_id")
+        bug_table_id = item.get("bug_table_id")
+        fields = item.get("fields")
+        for name, value in (
+            ("app_token", app_token),
+            ("idea_table_id", idea_table_id),
+            ("bug_table_id", bug_table_id),
+        ):
+            if not isinstance(value, str) or not value:
+                raise ConfigError(f"{prefix}.{name} is required")
+        if idea_table_id == bug_table_id:
+            raise ConfigError(f"{prefix} idea and bug tables must be different")
+        if not isinstance(fields, dict) or set(fields) != set(FEEDBACK_FIELD_KEYS) or not all(
+            isinstance(value, str) and value for value in fields.values()
+        ):
+            raise ConfigError(
+                f"{prefix}.fields must contain exactly: {', '.join(FEEDBACK_FIELD_KEYS)}"
+            )
+        if len(set(fields.values())) != len(FEEDBACK_FIELD_KEYS):
+            raise ConfigError(f"{prefix}.fields must map to distinct Feishu columns")
+        classified_feedback_channels.append(
+            ClassifiedFeedbackChannelConfig(
+                channel_id,
+                str(app_token),
+                str(idea_table_id),
+                str(bug_table_id),
+                dict(fields),
+            )
+        )
+    if feedback_enabled and not (feedback_channels or classified_feedback_channels):
+        raise ConfigError(
+            "feedback.channels or feedback.classified_channels is required when "
+            "feedback_archive is enabled"
+        )
     timeout = feedback.get("request_timeout_seconds", 15)
     if not isinstance(timeout, int) or not 1 <= timeout <= 120:
         raise ConfigError("feedback.request_timeout_seconds must be between 1 and 120")
@@ -258,6 +315,14 @@ def load_settings(path: str | Path) -> Settings:
         missing = [
             name
             for name in ("DEEPL_API_KEY", "FEISHU_APP_ID", "FEISHU_APP_SECRET")
+            if not os.getenv(name)
+        ]
+        if missing:
+            raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
+    if classified_feedback_channels:
+        missing = [
+            name
+            for name in ("SILICONFLOW_API_KEY", "SILICONFLOW_MODEL")
             if not os.getenv(name)
         ]
         if missing:
@@ -335,6 +400,7 @@ def load_settings(path: str | Path) -> Settings:
             backfill_days,
             excluded_usernames,
             tuple(feedback_channels),
+            tuple(classified_feedback_channels),
         ),
         feedback_analysis=FeedbackAnalysisConfig(
             analysis_api_url,

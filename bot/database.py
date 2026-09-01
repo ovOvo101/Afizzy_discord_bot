@@ -87,6 +87,14 @@ class Database:
           ON feedback_analysis_runs(next_attempt_at)
           WHERE status != 'completed';
         """)
+        feedback_columns = {
+            row["name"]
+            for row in self.connection.execute("PRAGMA table_info(feedback_tasks)")
+        }
+        if "classification" not in feedback_columns:
+            self.connection.execute(
+                "ALTER TABLE feedback_tasks ADD COLUMN classification TEXT"
+            )
         self.connection.commit()
 
     def claim_analysis_run(self, local_date: str) -> sqlite3.Row | None:
@@ -111,6 +119,7 @@ class Database:
                 INSERT INTO feedback_analysis_messages(run_id, message_id)
                 SELECT ?, f.message_id FROM feedback_tasks f
                 WHERE f.acknowledged = 1
+                  AND f.feishu_record_id IS NOT NULL
                   AND NOT EXISTS (
                     SELECT 1 FROM feedback_analysis_messages m
                     WHERE m.message_id = f.message_id
@@ -287,6 +296,17 @@ class Database:
             WHERE message_id = ?
             """,
             (detected_language, translation, message_id),
+        )
+        self.connection.commit()
+
+    def save_feedback_classification(self, message_id: int, classification: str) -> None:
+        self.connection.execute(
+            """
+            UPDATE feedback_tasks
+            SET classification = ?, last_error = NULL
+            WHERE message_id = ?
+            """,
+            (classification, message_id),
         )
         self.connection.commit()
 

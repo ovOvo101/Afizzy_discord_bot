@@ -78,12 +78,37 @@ so keep the Railway Volume mounted at `/data`.
 The archive is silent: it never replies to Discord messages. Messages from members with a role
 named `staff` (case-insensitive) are ignored.
 
+To monitor a mixed Discord channel, add it under `feedback.classified_channels`. SiliconFlow
+classifies each translated message as `idea`, `bug`, or `invalid`; valid feedback is routed to
+the configured table and invalid messages are retained only in SQLite for deduplication:
+
+```yaml
+feedback:
+  backfill_days: 7
+  classified_channels:
+    - channel_id: 123456789012345678
+      app_token: basxxxxxxxxxxxx
+      idea_table_id: tbl_idea
+      bug_table_id: tbl_bug
+      fields:  # same eight-column mapping used by feedback.channels
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 中文翻译
+        message_id: Discord消息ID
+        channel_id: 频道ID
+```
+
+Classified channels additionally require `SILICONFLOW_API_KEY` and `SILICONFLOW_MODEL`.
+
 ## Feedback analysis configuration
 
-Create a new table in the same Feishu Base before enabling this feature. The first seven text
-columns are `ID`, `Date`, `Category`, `User Feedback`, `Suggested Solution`, `User`, and
-`Priority`. Also create text columns named `审核状态`, `疑似重复目标`, `重复判断说明`,
-`来源消息ID`, `来源消息链接`, `来源频道ID`, `分析批次`, and `模型`.
+Create a new table in the same Feishu Base before enabling this feature. Add `ID`, `Date`,
+`Category`, `User Feedback`, `Suggested Solution`, `User`, `Priority`, `审核状态`,
+`疑似重复目标`, `重复判断说明`, `来源消息ID`, `来源消息链接`, and `来源频道ID`. `Date` is a
+date/time field; the others are text fields.
 
 Copy the new table ID from its URL into `feedback_analysis.table_id`, set
 `features.feedback_analysis: true`, and add Railway secrets `SILICONFLOW_API_KEY` and

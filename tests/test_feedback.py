@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 
 import discord
 
-from bot.config import load_settings
+from bot.config import ClassifiedFeedbackChannelConfig, load_settings
 from bot.database import Database
 from bot.feedback import FeedbackArchive
 
@@ -138,4 +138,82 @@ async def test_excluded_username_is_ignored(tmp_path: Path, monkeypatch: object)
 
     count = database.connection.execute("SELECT COUNT(*) FROM feedback_tasks").fetchone()[0]
     assert count == 0
+    database.close()
+
+
+async def test_classified_channel_routes_idea_to_idea_table(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    configured = settings(tmp_path, monkeypatch)
+    object.__setattr__(
+        configured.feedback,
+        "classified_channels",
+        (
+            ClassifiedFeedbackChannelConfig(
+                20, "bas1", "idea-table", "bug-table", FIELDS
+            ),
+        ),
+    )
+    database = Database(tmp_path / "feedback.sqlite3")
+    database.initialize()
+    database.claim_feedback(
+        2000,
+        1,
+        20,
+        "alice",
+        datetime(2026, 8, 31, 1, 2, tzinfo=UTC),
+        "Please add folders",
+        "https://discord.com/channels/1/20/2000",
+    )
+    archive = FeedbackArchive(SimpleNamespace(), configured, database)  # type: ignore[arg-type]
+    archive.api.translate = AsyncMock(return_value=("EN", "请增加文件夹"))  # type: ignore[method-assign]
+    archive.api.classify = AsyncMock(return_value="idea")  # type: ignore[method-assign]
+    archive.api.create_feishu_record = AsyncMock(return_value="idea-record")  # type: ignore[method-assign]
+
+    await archive._process(database.connection.execute("SELECT * FROM feedback_tasks").fetchone())
+
+    destination = archive.api.create_feishu_record.await_args.args[0]  # type: ignore[union-attr]
+    assert destination.table_id == "idea-table"
+    stored = database.connection.execute("SELECT * FROM feedback_tasks").fetchone()
+    assert stored["classification"] == "idea"
+    assert stored["feishu_record_id"] == "idea-record"
+    database.close()
+
+
+async def test_invalid_classified_message_is_not_written(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    configured = settings(tmp_path, monkeypatch)
+    object.__setattr__(
+        configured.feedback,
+        "classified_channels",
+        (
+            ClassifiedFeedbackChannelConfig(
+                20, "bas1", "idea-table", "bug-table", FIELDS
+            ),
+        ),
+    )
+    database = Database(tmp_path / "feedback.sqlite3")
+    database.initialize()
+    database.claim_feedback(
+        2001,
+        1,
+        20,
+        "alice",
+        datetime(2026, 8, 31, 1, 2, tzinfo=UTC),
+        "thanks",
+        "https://discord.com/channels/1/20/2001",
+    )
+    archive = FeedbackArchive(SimpleNamespace(), configured, database)  # type: ignore[arg-type]
+    archive.api.translate = AsyncMock(return_value=("EN", "谢谢"))  # type: ignore[method-assign]
+    archive.api.classify = AsyncMock(return_value="invalid")  # type: ignore[method-assign]
+    archive.api.create_feishu_record = AsyncMock()  # type: ignore[method-assign]
+
+    await archive._process(database.connection.execute("SELECT * FROM feedback_tasks").fetchone())
+
+    archive.api.create_feishu_record.assert_not_awaited()  # type: ignore[union-attr]
+    stored = database.connection.execute("SELECT * FROM feedback_tasks").fetchone()
+    assert stored["classification"] == "invalid"
+    assert stored["acknowledged"] == 1
+    assert stored["feishu_record_id"] is None
     database.close()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+import json
 import logging
 import os
 import time
@@ -11,11 +12,18 @@ import aiohttp
 import discord
 from discord.ext import tasks
 
-from .config import FeedbackChannelConfig, Settings
+from .config import ClassifiedFeedbackChannelConfig, FeedbackChannelConfig, Settings
 from .database import Database
 
 LOGGER = logging.getLogger(__name__)
 FEISHU_TOKEN_URL = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+CLASSIFICATION_PROMPT = """判断一条 Discord 消息是否包含有效的产品反馈。
+只允许返回以下分类：
+- idea：用户对产品功能、体验或设计提出建议、需求或改进意见。
+- bug：用户描述产品实际出现的错误、异常、卡住、失效或与预期行为不一致。
+- invalid：闲聊、致谢、推广、纯提问、无法确认与产品有关，或信息不足以形成建议或 Bug。
+如果同时包含建议和 Bug，以消息的核心诉求分类；不确定时返回 invalid。
+只返回符合 JSON Schema 的结果。"""
 
 
 class ApiError(RuntimeError):
@@ -68,6 +76,70 @@ class FeedbackApiClient:
             return str(result["detected_source_language"]), str(result["text"])
         except (KeyError, IndexError, TypeError) as exc:
             raise ApiError("DeepL returned an invalid response") from exc
+
+    async def classify(self, original: str, translation: str) -> str:
+        body = {
+            "model": os.environ["SILICONFLOW_MODEL"],
+            "messages": [
+                {"role": "system", "content": CLASSIFICATION_PROMPT},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {"original": original, "chinese_translation": translation},
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            "stream": False,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "feedback_classification",
+                    "strict": True,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "classification": {
+                                "type": "string",
+                                "enum": ["idea", "bug", "invalid"],
+                            }
+                        },
+                        "required": ["classification"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+        }
+        timeout = aiohttp.ClientTimeout(
+            total=self.settings.feedback_analysis.request_timeout_seconds
+        )
+        try:
+            async with self._session().post(
+                self.settings.feedback_analysis.api_url,
+                headers={
+                    "Authorization": f"Bearer {os.environ['SILICONFLOW_API_KEY']}",
+                    "Content-Type": "application/json",
+                },
+                json=body,
+                timeout=timeout,
+            ) as response:
+                payload = await response.json(content_type=None)
+                if response.status != 200:
+                    raise ApiError(
+                        f"SiliconFlow classification failed with HTTP {response.status}"
+                    )
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            raise ApiError(
+                f"SiliconFlow classification failed: {type(exc).__name__}"
+            ) from exc
+        try:
+            content = payload["choices"][0]["message"]["content"]
+            classification = json.loads(content)["classification"]
+            if classification not in {"idea", "bug", "invalid"}:
+                raise ValueError
+            return str(classification)
+        except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ApiError("SiliconFlow returned an invalid classification") from exc
 
     async def _get_feishu_token(self, force: bool = False) -> str:
         async with self._token_lock:
@@ -145,6 +217,10 @@ class FeedbackArchive:
         self.settings = settings
         self.database = database
         self.channels = {item.channel_id: item for item in settings.feedback.channels}
+        self.classified_channels = {
+            item.channel_id: item for item in settings.feedback.classified_channels
+        }
+        self.monitored_channel_ids = set(self.channels) | set(self.classified_channels)
         self.excluded_usernames = set(settings.feedback.excluded_usernames)
         self.api = FeedbackApiClient(settings)
         self._backfill_task: asyncio.Task[None] | None = None
@@ -162,7 +238,7 @@ class FeedbackArchive:
         await self.api.close()
 
     async def on_message(self, message: discord.Message) -> None:
-        if message.channel.id not in self.channels:
+        if message.channel.id not in self.monitored_channel_ids:
             return
         if self._should_ignore(message):
             return
@@ -202,7 +278,7 @@ class FeedbackArchive:
     async def _backfill(self) -> None:
         await self.bot.wait_until_ready()
         after = datetime.now(UTC) - timedelta(days=self.settings.feedback.backfill_days)
-        pending = set(self.channels)
+        pending = set(self.monitored_channel_ids)
         while pending:
             for channel_id in tuple(pending):
                 if self.database.feedback_backfill_completed(channel_id):
@@ -257,7 +333,8 @@ class FeedbackArchive:
 
     async def _process(self, row: Any) -> None:
         channel_config = self.channels.get(row["channel_id"])
-        if channel_config is None:
+        classified_config = self.classified_channels.get(row["channel_id"])
+        if channel_config is None and classified_config is None:
             raise ApiError(f"No feedback configuration for channel {row['channel_id']}")
         detected_language = row["detected_language"]
         translation = row["chinese_translation"]
@@ -266,6 +343,24 @@ class FeedbackArchive:
             self.database.save_feedback_translation(
                 row["message_id"], detected_language, translation
             )
+        if classified_config is not None:
+            classification = row["classification"]
+            if not classification:
+                classification = await self.api.classify(
+                    row["original_message"], translation
+                )
+                self.database.save_feedback_classification(
+                    row["message_id"], classification
+                )
+            if classification == "invalid":
+                self.database.mark_feedback_acknowledged(row["message_id"])
+                LOGGER.info("Ignored invalid feedback message %s", row["message_id"])
+                return
+            channel_config = self._classified_destination(
+                classified_config, classification
+            )
+        if channel_config is None:
+            raise ApiError(f"No destination for feedback message {row['message_id']}")
         if not row["feishu_record_id"]:
             names = channel_config.fields
             timestamp_ms = int(datetime.fromisoformat(row["message_time"]).timestamp() * 1000)
@@ -286,3 +381,17 @@ class FeedbackArchive:
             self.database.mark_feedback_delivered(row["message_id"], record_id)
         self.database.mark_feedback_acknowledged(row["message_id"])
         LOGGER.info("Archived feedback message %s", row["message_id"])
+
+    @staticmethod
+    def _classified_destination(
+        config: ClassifiedFeedbackChannelConfig, classification: str
+    ) -> FeedbackChannelConfig:
+        table_id = {
+            "idea": config.idea_table_id,
+            "bug": config.bug_table_id,
+        }.get(classification)
+        if table_id is None:
+            raise ApiError(f"Unsupported feedback classification: {classification}")
+        return FeedbackChannelConfig(
+            config.channel_id, config.app_token, table_id, config.fields
+        )

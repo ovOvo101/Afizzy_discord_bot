@@ -40,6 +40,20 @@ feedback:
         chinese_translation: 翻译
         message_id: 消息ID
         channel_id: 频道ID
+  classified_channels:
+    - channel_id: 1536643468779327519
+      app_token: HBCibNKNTatMPXs1TBUctQlkn7g
+      idea_table_id: tblszbuWoUTfa8SG
+      bug_table_id: tbl82RVXLDVrRI6h
+      fields:
+        username: 用户名
+        message_time: 消息时间
+        original_message: 原始消息
+        message_link: 消息链接
+        detected_language: 识别语言
+        chinese_translation: 翻译
+        message_id: 消息ID
+        channel_id: 频道ID
 feedback_analysis:
   api_url: https://api.siliconflow.cn/v1/chat/completions
   schedule_time: "10:00"

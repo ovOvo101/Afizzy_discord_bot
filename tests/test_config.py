@@ -96,3 +96,49 @@ feedback_analysis:
     assert settings.feedback_analysis.api_url == (
         "https://api.siliconflow.cn/v1/chat/completions"
     )
+
+
+def test_classified_feedback_channel_configuration(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    for name in (
+        "DEEPL_API_KEY",
+        "FEISHU_APP_ID",
+        "FEISHU_APP_SECRET",
+        "SILICONFLOW_API_KEY",
+        "SILICONFLOW_MODEL",
+    ):
+        monkeypatch.setenv(name, "test")  # type: ignore[attr-defined]
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        """
+features: {feedback_archive: true}
+storage: {database_path: data/test.sqlite3}
+content: {polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}
+feedback:
+  backfill_days: 7
+  classified_channels:
+    - channel_id: 20
+      app_token: bas1
+      idea_table_id: idea-table
+      bug_table_id: bug-table
+      fields:
+        username: username
+        message_time: time
+        original_message: original
+        message_link: link
+        detected_language: language
+        chinese_translation: translation
+        message_id: message_id
+        channel_id: channel_id
+""",
+        encoding="utf-8",
+    )
+
+    settings = load_settings(path)
+
+    channel = settings.feedback.classified_channels[0]
+    assert channel.channel_id == 20
+    assert channel.idea_table_id == "idea-table"
+    assert channel.bug_table_id == "bug-table"
+    assert settings.feedback.backfill_days == 7
