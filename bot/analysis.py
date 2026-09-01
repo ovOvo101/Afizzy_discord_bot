@@ -25,6 +25,7 @@ ANALYSIS_INSTRUCTIONS = """你是 Afizzy 的产品反馈分析员。把 Discord 
 4. Category 使用简洁的产品领域名称。Suggested Solution 必须具体可执行。
 5. Priority 只能是 🔴 P0、🔴 P1、🟡 P2、⚪ Idea、🟢 Community。
 6. source_message_ids 必须只使用输入中出现的 Discord 消息 ID。没有有效产品反馈时返回空 items。
+7. 除用户名、消息 ID 和专有名词外，所有分析字段默认使用简体中文。产品名、功能名、品牌名、技术术语和社区惯用表达（例如 fizz）保留原始英文及原有大小写，不要强行翻译。
 只返回符合 JSON Schema 的结果。"""
 
 

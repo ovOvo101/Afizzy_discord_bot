@@ -87,6 +87,9 @@ def test_siliconflow_chat_completions_request_format(
 
     assert body["model"] == "Qwen/test-vl"
     assert body["messages"][0]["role"] == "system"
+    system_prompt = body["messages"][0]["content"]
+    assert "默认使用简体中文" in system_prompt
+    assert "例如 fizz" in system_prompt
     assert body["messages"][1]["content"][0]["type"] == "image_url"
     assert body["messages"][1]["content"][-1]["type"] == "text"
     assert body["response_format"]["type"] == "json_schema"
