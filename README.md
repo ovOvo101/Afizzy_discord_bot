@@ -27,6 +27,8 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 - `features.idea`: enables the `/idea` command.
 - `features.feedback_archive`: translates configured feedback channels and archives them to
   Feishu Bitable.
+- `features.feedback_analysis`: runs the daily SiliconFlow product-feedback analysis and writes
+  review candidates to a separate Feishu Bitable table.
 - `data/polls.yaml`, `data/prompts.yaml`, and `data/ideas.yaml`: inspiration content retained for
   future use.
 
@@ -75,6 +77,26 @@ so keep the Railway Volume mounted at `/data`.
 
 The archive is silent: it never replies to Discord messages. Messages from members with a role
 named `staff` (case-insensitive) are ignored.
+
+## Feedback analysis configuration
+
+Create a new table in the same Feishu Base before enabling this feature. The first seven text
+columns are `ID`, `Date`, `Category`, `User Feedback`, `Suggested Solution`, `User`, and
+`Priority`. Also create text columns named `审核状态`, `疑似重复目标`, `重复判断说明`,
+`来源消息ID`, `来源消息链接`, `来源频道ID`, `分析批次`, and `模型`.
+
+Copy the new table ID from its URL into `feedback_analysis.table_id`, set
+`features.feedback_analysis: true`, and add Railway secrets `SILICONFLOW_API_KEY` and
+`SILICONFLOW_MODEL`. The production template uses
+`https://api.siliconflow.cn/v1/chat/completions` and runs at 10:00 in
+`scheduling.timezone`. On its first run it analyzes every successfully archived SQLite feedback
+message; later runs only include messages that have not appeared in an earlier analysis run.
+
+Results are always appended with `审核状态=待审核`. Similar historical requests are identified
+in the duplicate fields but never overwritten automatically. SiliconFlow and Feishu stages are
+persisted separately, so a Feishu retry does not call SiliconFlow again. Image attachments are
+refreshed from Discord at analysis time and used as visual inputs when available.
+Select a SiliconFlow model that supports both image input and structured outputs.
 
 For the temporary test server, set Railway `BOT_CONFIG_PATH=config/config.test.yaml`. Restore
 `BOT_CONFIG_PATH=config/config.railway.yaml` after testing, then remove `config/config.test.yaml`.

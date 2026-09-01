@@ -104,9 +104,14 @@ class FeedbackApiClient:
     async def create_feishu_record(
         self, channel: FeedbackChannelConfig, fields: dict[str, Any]
     ) -> str:
+        return await self.create_bitable_record(channel.app_token, channel.table_id, fields)
+
+    async def create_bitable_record(
+        self, app_token: str, table_id: str, fields: dict[str, Any]
+    ) -> str:
         url = (
             "https://open.feishu.cn/open-apis/bitable/v1/apps/"
-            f"{channel.app_token}/tables/{channel.table_id}/records"
+            f"{app_token}/tables/{table_id}/records"
         )
         for attempt in range(2):
             token = await self._get_feishu_token(force=attempt == 1)

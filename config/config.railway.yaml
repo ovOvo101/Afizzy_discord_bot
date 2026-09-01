@@ -9,6 +9,7 @@ features:
   daily_prompt: false
   idea: false
   feedback_archive: true
+  feedback_analysis: true
 feedback:
   deepl_api_url: https://api-free.deepl.com
   request_timeout_seconds: 15
@@ -39,6 +40,29 @@ feedback:
         chinese_translation: 翻译
         message_id: 消息ID
         channel_id: 频道ID
+feedback_analysis:
+  api_url: https://api.siliconflow.cn/v1/chat/completions
+  schedule_time: "10:00"
+  request_timeout_seconds: 120
+  max_images_per_batch: 20
+  app_token: HBCibNKNTatMPXs1TBUctQlkn7g
+  table_id: tblV1OPIbxV3snua
+  fields:
+    number: ID
+    dates: Date
+    category: Category
+    user_feedback: User Feedback
+    suggested_solution: Suggested Solution
+    users: User
+    priority: Priority
+    review_status: 审核状态
+    possible_duplicate: 疑似重复目标
+    duplicate_reason: 重复判断说明
+    source_message_ids: 来源消息ID
+    source_message_links: 来源消息链接
+    source_channel_ids: 来源频道ID
+    analysis_batch: 分析批次
+    model: 模型
 scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"

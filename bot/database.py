@@ -56,7 +56,174 @@ class Database:
           backfill_days INTEGER NOT NULL,
           completed_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS feedback_analysis_runs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          local_date TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'pending',
+          attempts INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at TEXT NOT NULL,
+          openai_response TEXT,
+          last_error TEXT,
+          created_at TEXT NOT NULL,
+          completed_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS feedback_analysis_messages (
+          run_id INTEGER NOT NULL,
+          message_id INTEGER NOT NULL UNIQUE,
+          PRIMARY KEY(run_id, message_id),
+          FOREIGN KEY(run_id) REFERENCES feedback_analysis_runs(id)
+        );
+        CREATE TABLE IF NOT EXISTS feedback_analysis_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          run_id INTEGER NOT NULL,
+          item_index INTEGER NOT NULL,
+          payload TEXT NOT NULL,
+          feishu_record_id TEXT,
+          created_at TEXT NOT NULL,
+          UNIQUE(run_id, item_index),
+          FOREIGN KEY(run_id) REFERENCES feedback_analysis_runs(id)
+        );
+        CREATE INDEX IF NOT EXISTS feedback_analysis_due
+          ON feedback_analysis_runs(next_attempt_at)
+          WHERE status != 'completed';
         """)
+        self.connection.commit()
+
+    def claim_analysis_run(self, local_date: str) -> sqlite3.Row | None:
+        """Atomically snapshot all archived feedback not assigned to an earlier run."""
+        now = datetime.now(UTC).isoformat()
+        try:
+            self.connection.execute("BEGIN IMMEDIATE")
+            cursor = self.connection.execute(
+                """
+                INSERT OR IGNORE INTO feedback_analysis_runs(
+                  local_date, next_attempt_at, created_at
+                ) VALUES (?, ?, ?)
+                """,
+                (local_date, now, now),
+            )
+            if cursor.rowcount != 1:
+                self.connection.rollback()
+                return None
+            run_id = int(cursor.lastrowid)
+            self.connection.execute(
+                """
+                INSERT INTO feedback_analysis_messages(run_id, message_id)
+                SELECT ?, f.message_id FROM feedback_tasks f
+                WHERE f.acknowledged = 1
+                  AND NOT EXISTS (
+                    SELECT 1 FROM feedback_analysis_messages m
+                    WHERE m.message_id = f.message_id
+                  )
+                ORDER BY f.message_time
+                """,
+                (run_id,),
+            )
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
+            raise
+        return self.connection.execute(
+            "SELECT * FROM feedback_analysis_runs WHERE id = ?", (run_id,)
+        ).fetchone()
+
+    def due_analysis_runs(self, now: datetime) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            SELECT * FROM feedback_analysis_runs
+            WHERE status != 'completed' AND next_attempt_at <= ?
+            ORDER BY id LIMIT 5
+            """,
+            (now.astimezone(UTC).isoformat(),),
+        ).fetchall()
+
+    def analysis_messages(self, run_id: int) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            SELECT f.* FROM feedback_tasks f
+            JOIN feedback_analysis_messages m ON m.message_id = f.message_id
+            WHERE m.run_id = ? ORDER BY f.message_time
+            """,
+            (run_id,),
+        ).fetchall()
+
+    def analysis_history(self) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            SELECT payload FROM feedback_analysis_items
+            WHERE feishu_record_id IS NOT NULL ORDER BY id
+            """
+        ).fetchall()
+
+    def save_analysis_response(self, run_id: int, response: str, items: list[str]) -> None:
+        now = datetime.now(UTC).isoformat()
+        try:
+            self.connection.execute("BEGIN IMMEDIATE")
+            self.connection.execute(
+                """
+                UPDATE feedback_analysis_runs
+                SET openai_response = ?, status = 'writing', last_error = NULL
+                WHERE id = ?
+                """,
+                (response, run_id),
+            )
+            for index, payload in enumerate(items):
+                self.connection.execute(
+                    """
+                    INSERT OR IGNORE INTO feedback_analysis_items(
+                      run_id, item_index, payload, created_at
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    (run_id, index, payload, now),
+                )
+            self.connection.commit()
+        except Exception:
+            self.connection.rollback()
+            raise
+
+    def pending_analysis_items(self, run_id: int) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            SELECT * FROM feedback_analysis_items
+            WHERE run_id = ? AND feishu_record_id IS NULL ORDER BY item_index
+            """,
+            (run_id,),
+        ).fetchall()
+
+    def mark_analysis_item_delivered(self, item_id: int, record_id: str) -> None:
+        self.connection.execute(
+            "UPDATE feedback_analysis_items SET feishu_record_id = ? WHERE id = ?",
+            (record_id, item_id),
+        )
+        self.connection.commit()
+
+    def complete_analysis_run(self, run_id: int) -> None:
+        now = datetime.now(UTC).isoformat()
+        self.connection.execute(
+            """
+            UPDATE feedback_analysis_runs
+            SET status = 'completed', completed_at = ?, last_error = NULL
+            WHERE id = ?
+            """,
+            (now, run_id),
+        )
+        self.connection.commit()
+
+    def defer_analysis_run(self, run_id: int, error: str, now: datetime) -> None:
+        row = self.connection.execute(
+            "SELECT attempts FROM feedback_analysis_runs WHERE id = ?", (run_id,)
+        ).fetchone()
+        attempts = int(row["attempts"]) + 1
+        delays = (60, 120, 240, 480, 960)
+        delay = delays[attempts - 1] if attempts <= len(delays) else 3600
+        next_attempt = datetime.fromtimestamp(now.timestamp() + delay, UTC).isoformat()
+        self.connection.execute(
+            """
+            UPDATE feedback_analysis_runs
+            SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE id = ?
+            """,
+            (attempts, next_attempt, error[:1000], run_id),
+        )
         self.connection.commit()
 
     def close(self) -> None:

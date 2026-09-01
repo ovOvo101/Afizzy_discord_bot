@@ -5,6 +5,25 @@ import pytest
 from bot.config import ConfigError, load_settings
 
 
+ANALYSIS_FIELDS = {
+    "number": "ID",
+    "dates": "Date",
+    "category": "Category",
+    "user_feedback": "Feedback",
+    "suggested_solution": "Solution",
+    "users": "User",
+    "priority": "Priority",
+    "review_status": "Review",
+    "possible_duplicate": "Duplicate",
+    "duplicate_reason": "Reason",
+    "source_message_ids": "Message IDs",
+    "source_message_links": "Links",
+    "source_channel_ids": "Channels",
+    "analysis_batch": "Batch",
+    "model": "Model",
+}
+
+
 def test_load_settings_resolves_paths(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()
@@ -31,3 +50,51 @@ def test_invalid_time_is_rejected(tmp_path: Path) -> None:
     path.write_text("scheduling: {poll_time: never}\n", encoding="utf-8")
     with pytest.raises(ConfigError):
         load_settings(path)
+
+
+def test_analysis_requires_siliconflow_environment(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    monkeypatch.delenv("SILICONFLOW_API_KEY", raising=False)  # type: ignore[attr-defined]
+    monkeypatch.delenv("SILICONFLOW_MODEL", raising=False)  # type: ignore[attr-defined]
+    for name in ("DEEPL_API_KEY", "FEISHU_APP_ID", "FEISHU_APP_SECRET"):
+        monkeypatch.setenv(name, "test")  # type: ignore[attr-defined]
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        f"""
+features: {{feedback_archive: true, feedback_analysis: true}}
+storage: {{database_path: data/test.sqlite3}}
+content: {{polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}}
+feedback:
+  channels:
+    - channel_id: 10
+      app_token: bas1
+      table_id: tbl1
+      fields:
+        username: username
+        message_time: time
+        original_message: original
+        message_link: link
+        detected_language: language
+        chinese_translation: translation
+        message_id: message_id
+        channel_id: channel_id
+feedback_analysis:
+  app_token: bas1
+  table_id: tbl2
+  fields: {ANALYSIS_FIELDS!r}
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigError, match="SILICONFLOW_API_KEY"):
+        load_settings(path)
+
+    monkeypatch.setenv("SILICONFLOW_API_KEY", "test")  # type: ignore[attr-defined]
+    monkeypatch.setenv("SILICONFLOW_MODEL", "test-model")  # type: ignore[attr-defined]
+    settings = load_settings(path)
+    assert settings.features.feedback_analysis
+    assert settings.feedback_analysis.schedule_time == "10:00"
+    assert settings.feedback_analysis.api_url == (
+        "https://api.siliconflow.cn/v1/chat/completions"
+    )

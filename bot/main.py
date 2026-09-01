@@ -6,6 +6,7 @@ import os
 import discord
 from discord import app_commands
 
+from .analysis import FeedbackAnalyzer
 from .config import ConfigError, Settings, load_settings
 from .content import ContentError
 from .database import Database
@@ -45,6 +46,11 @@ class CreativeBot(discord.Client):
             if settings.features.feedback_archive
             else None
         )
+        self.feedback_analysis = (
+            FeedbackAnalyzer(self, settings, database)
+            if settings.features.feedback_analysis
+            else None
+        )
 
     async def setup_hook(self) -> None:
         if self.settings.discord.guild_id:
@@ -57,6 +63,8 @@ class CreativeBot(discord.Client):
             self.inspiration.start()
         if self.feedback:
             await self.feedback.start()
+        if self.feedback_analysis:
+            await self.feedback_analysis.start()
 
     async def on_message(self, message: discord.Message) -> None:
         if self.invite_code:
@@ -71,6 +79,8 @@ class CreativeBot(discord.Client):
             self.inspiration.stop()
         if self.feedback:
             await self.feedback.stop()
+        if self.feedback_analysis:
+            await self.feedback_analysis.stop()
         self.database.close()
         await super().close()
 

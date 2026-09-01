@@ -36,6 +36,7 @@ class FeatureConfig:
     daily_prompt: bool
     idea: bool
     feedback_archive: bool
+    feedback_analysis: bool
 
 
 FEEDBACK_FIELD_KEYS = (
@@ -67,12 +68,43 @@ class FeedbackConfig:
     channels: tuple[FeedbackChannelConfig, ...]
 
 
+ANALYSIS_FIELD_KEYS = (
+    "number",
+    "dates",
+    "category",
+    "user_feedback",
+    "suggested_solution",
+    "users",
+    "priority",
+    "review_status",
+    "possible_duplicate",
+    "duplicate_reason",
+    "source_message_ids",
+    "source_message_links",
+    "source_channel_ids",
+    "analysis_batch",
+    "model",
+)
+
+
+@dataclass(frozen=True)
+class FeedbackAnalysisConfig:
+    api_url: str
+    schedule_time: str
+    app_token: str
+    table_id: str
+    fields: dict[str, str]
+    request_timeout_seconds: int
+    max_images_per_batch: int
+
+
 @dataclass(frozen=True)
 class Settings:
     discord: DiscordConfig
     schedule: ScheduleConfig
     features: FeatureConfig
     feedback: FeedbackConfig
+    feedback_analysis: FeedbackAnalysisConfig
     database_path: Path
     polls_path: Path
     prompts_path: Path
@@ -148,9 +180,10 @@ def load_settings(path: str | Path) -> Settings:
     content = payload.get("content", {})
     features = payload.get("features", {})
     feedback = payload.get("feedback", {})
+    analysis = payload.get("feedback_analysis", {})
     if not all(
         isinstance(section, dict)
-        for section in (discord, scheduling, storage, content, features, feedback)
+        for section in (discord, scheduling, storage, content, features, feedback, analysis)
     ):
         raise ConfigError("Config sections must be mappings")
     try:
@@ -167,6 +200,9 @@ def load_settings(path: str | Path) -> Settings:
         return root / value
     feedback_enabled = _boolean(
         features.get("feedback_archive"), "features.feedback_archive", False
+    )
+    analysis_enabled = _boolean(
+        features.get("feedback_analysis"), "features.feedback_analysis", False
     )
     raw_channels = feedback.get("channels", [])
     if not isinstance(raw_channels, list):
@@ -228,6 +264,45 @@ def load_settings(path: str | Path) -> Settings:
         ]
         if missing:
             raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
+    analysis_app_token = analysis.get("app_token", "")
+    analysis_table_id = analysis.get("table_id", "")
+    analysis_fields = analysis.get("fields", {})
+    analysis_api_url = analysis.get(
+        "api_url", "https://api.siliconflow.cn/v1/chat/completions"
+    )
+    if not isinstance(analysis_api_url, str) or not analysis_api_url.startswith("https://"):
+        raise ConfigError("feedback_analysis.api_url must be an HTTPS URL")
+    if analysis_enabled:
+        if not feedback_enabled:
+            raise ConfigError("feedback_analysis requires feedback_archive")
+        if not isinstance(analysis_app_token, str) or not analysis_app_token:
+            raise ConfigError("feedback_analysis.app_token is required")
+        if not isinstance(analysis_table_id, str) or not analysis_table_id:
+            raise ConfigError("feedback_analysis.table_id is required")
+        if not isinstance(analysis_fields, dict) or set(analysis_fields) != set(
+            ANALYSIS_FIELD_KEYS
+        ):
+            raise ConfigError(
+                "feedback_analysis.fields must contain exactly: "
+                + ", ".join(ANALYSIS_FIELD_KEYS)
+            )
+        if not all(isinstance(value, str) and value for value in analysis_fields.values()):
+            raise ConfigError("feedback_analysis.fields values must be non-empty strings")
+        if len(set(analysis_fields.values())) != len(ANALYSIS_FIELD_KEYS):
+            raise ConfigError("feedback_analysis.fields must map to distinct Feishu columns")
+        missing = [
+            name
+            for name in ("SILICONFLOW_API_KEY", "SILICONFLOW_MODEL")
+            if not os.getenv(name)
+        ]
+        if missing:
+            raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
+    analysis_timeout = analysis.get("request_timeout_seconds", 120)
+    if not isinstance(analysis_timeout, int) or not 10 <= analysis_timeout <= 600:
+        raise ConfigError("feedback_analysis.request_timeout_seconds must be between 10 and 600")
+    max_images = analysis.get("max_images_per_batch", 20)
+    if not isinstance(max_images, int) or not 0 <= max_images <= 100:
+        raise ConfigError("feedback_analysis.max_images_per_batch must be between 0 and 100")
     return Settings(
         discord=DiscordConfig(
             _optional_positive_int(discord.get("guild_id"), "guild_id"),
@@ -254,6 +329,7 @@ def load_settings(path: str | Path) -> Settings:
             ),
             idea=_boolean(features.get("idea"), "features.idea", False),
             feedback_archive=feedback_enabled,
+            feedback_analysis=analysis_enabled,
         ),
         feedback=FeedbackConfig(
             api_url.rstrip("/"),
@@ -261,6 +337,15 @@ def load_settings(path: str | Path) -> Settings:
             backfill_days,
             excluded_usernames,
             tuple(feedback_channels),
+        ),
+        feedback_analysis=FeedbackAnalysisConfig(
+            analysis_api_url,
+            _time(analysis.get("schedule_time", "10:00"), "feedback_analysis.schedule_time"),
+            str(analysis_app_token),
+            str(analysis_table_id),
+            dict(analysis_fields) if isinstance(analysis_fields, dict) else {},
+            analysis_timeout,
+            max_images,
         ),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),
