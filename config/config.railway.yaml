@@ -1,9 +1,9 @@
 discord:
   guild_id: 1524016102919635075
-  poll_channel_id: 1528285430196342804
+  poll_channel_id: 0
   prompt_channel_id: 0
   invite_code_channel_id: 1528287028205191230
-  minimum_message_channel_ids: []
+  minimum_message_channel_ids: [1528285430196342804]
 features:
   invite_code_limit: true
   daily_poll: false
@@ -11,7 +11,7 @@ features:
   idea: false
   feedback_archive: true
   feedback_analysis: true
-  minimum_message_length: false
+  minimum_message_length: true
 feedback:
   deepl_api_url: https://api-free.deepl.com
   request_timeout_seconds: 15
