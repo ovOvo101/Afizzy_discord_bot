@@ -9,7 +9,6 @@ COPY pyproject.toml ./
 COPY bot ./bot
 RUN pip install --no-cache-dir .
 
-COPY data ./data
 COPY config ./config
 
 CMD ["python", "-m", "bot.main"]
