@@ -18,6 +18,7 @@ class DiscordConfig:
     poll_channel_id: int | None
     prompt_channel_id: int | None
     invite_code_channel_id: int | None
+    minimum_message_channel_ids: tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,7 @@ class FeatureConfig:
     idea: bool
     feedback_archive: bool
     feedback_analysis: bool
+    minimum_message_length: bool
 
 
 FEEDBACK_FIELD_KEYS = (
@@ -127,6 +129,20 @@ def _optional_positive_int(value: object, name: str) -> int | None:
     if result < 1:
         raise ConfigError(f"{name} must be a positive integer")
     return result
+
+
+def _positive_int_list(value: object, name: str) -> tuple[int, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise ConfigError(f"{name} must be a list of positive integers")
+    result = tuple(_optional_positive_int(item, name) for item in value)
+    if any(item is None for item in result):
+        raise ConfigError(f"{name} must contain only positive integers")
+    channel_ids = tuple(item for item in result if item is not None)
+    if len(set(channel_ids)) != len(channel_ids):
+        raise ConfigError(f"{name} must not contain duplicates")
+    return channel_ids
 
 
 def _time(value: object, name: str) -> str:
@@ -372,6 +388,10 @@ def load_settings(path: str | Path) -> Settings:
             _optional_positive_int(
                 discord.get("invite_code_channel_id"), "invite_code_channel_id"
             ),
+            _positive_int_list(
+                discord.get("minimum_message_channel_ids"),
+                "discord.minimum_message_channel_ids",
+            ),
         ),
         schedule=ScheduleConfig(
             timezone,
@@ -391,6 +411,11 @@ def load_settings(path: str | Path) -> Settings:
             idea=_boolean(features.get("idea"), "features.idea", False),
             feedback_archive=feedback_enabled,
             feedback_analysis=analysis_enabled,
+            minimum_message_length=_boolean(
+                features.get("minimum_message_length"),
+                "features.minimum_message_length",
+                False,
+            ),
         ),
         feedback=FeedbackConfig(
             api_url.rstrip("/"),

@@ -21,6 +21,9 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 
 - `features.invite_code_limit`: enables the persistent one-message limit for `invite-code`.
 - `discord.invite_code_channel_id`: identifies the channel where that limit applies.
+- `features.minimum_message_length`: removes messages shorter than 6 non-whitespace
+  characters in the configured channels.
+- `discord.minimum_message_channel_ids`: lists the channel IDs where the minimum length applies.
 - `features.daily_poll`: enables scheduled polls.
 - `scheduling.poll_weekdays`: selects the weekdays when polls are published.
 - `features.daily_prompt`: enables scheduled daily prompts.

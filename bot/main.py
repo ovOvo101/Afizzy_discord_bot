@@ -13,6 +13,7 @@ from .database import Database
 from .feedback import FeedbackArchive
 from .inspiration import InspirationFeature
 from .invite_code import InviteCodeLimiter
+from .message_length import MinimumMessageLength
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 LOGGER = logging.getLogger(__name__)
@@ -25,6 +26,11 @@ class CreativeBot(discord.Client):
         super().__init__(intents=intents)
         self.settings, self.database = settings, database
         self.tree = app_commands.CommandTree(self)
+        self.minimum_message_length = (
+            MinimumMessageLength(settings.discord.minimum_message_channel_ids)
+            if settings.features.minimum_message_length
+            else None
+        )
         self.invite_code = (
             InviteCodeLimiter(database, settings.discord.invite_code_channel_id)
             if settings.features.invite_code_limit
@@ -67,6 +73,8 @@ class CreativeBot(discord.Client):
             await self.feedback_analysis.start()
 
     async def on_message(self, message: discord.Message) -> None:
+        if self.minimum_message_length and await self.minimum_message_length.handle(message):
+            return
         if self.invite_code:
             await self.invite_code.handle(message)
         if self.inspiration:

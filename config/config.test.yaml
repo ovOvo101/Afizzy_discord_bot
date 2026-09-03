@@ -3,12 +3,14 @@ discord:
   poll_channel_id: 0
   prompt_channel_id: 0
   invite_code_channel_id: 0
+  minimum_message_channel_ids: []
 features:
   invite_code_limit: false
   daily_poll: false
   daily_prompt: false
   idea: false
   feedback_archive: true
+  minimum_message_length: false
 feedback:
   deepl_api_url: https://api-free.deepl.com
   request_timeout_seconds: 15
