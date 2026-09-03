@@ -12,6 +12,7 @@ def _is_plain_text_message(message: discord.Message) -> bool:
         or message.embeds
         or message.stickers
         or message.poll is not None
+        or getattr(message, "message_snapshots", None)
     )
 
 

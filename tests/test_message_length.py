@@ -11,6 +11,7 @@ def message(
     embeds: list[SimpleNamespace] | None = None,
     stickers: list[SimpleNamespace] | None = None,
     poll: SimpleNamespace | None = None,
+    message_snapshots: list[SimpleNamespace] | None = None,
 ) -> SimpleNamespace:
     author = SimpleNamespace(id=100, bot=False, send=AsyncMock())
     channel = SimpleNamespace(id=channel_id, name="introductions")
@@ -21,6 +22,7 @@ def message(
         embeds=embeds or [],
         stickers=stickers or [],
         poll=poll,
+        message_snapshots=message_snapshots or [],
         author=author,
         channel=channel,
         guild=SimpleNamespace(id=1),
@@ -86,3 +88,12 @@ async def test_sticker_and_poll_bypass_length_limit() -> None:
 
     with_sticker.delete.assert_not_awaited()
     with_poll.delete.assert_not_awaited()
+
+
+async def test_forwarded_message_snapshot_bypasses_length_limit() -> None:
+    forwarded = message("", message_snapshots=[SimpleNamespace(content="forwarded text")])
+
+    assert not await MinimumMessageLength((10,)).handle(forwarded)  # type: ignore[arg-type]
+
+    forwarded.delete.assert_not_awaited()
+    forwarded.author.send.assert_not_awaited()
