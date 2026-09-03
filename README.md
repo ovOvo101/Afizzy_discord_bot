@@ -24,16 +24,12 @@ Pushes to the GitHub `main` branch trigger automatic Railway deployments.
 - `features.minimum_message_length`: removes messages shorter than 6 non-whitespace
   characters in the configured channels.
 - `discord.minimum_message_channel_ids`: lists the channel IDs where the minimum length applies.
-- `features.daily_poll`: enables scheduled polls.
-- `scheduling.poll_weekdays`: selects the weekdays when polls are published.
-- `features.daily_prompt`: enables scheduled daily prompts.
-- `features.idea`: enables the `/idea` command.
+- The legacy poll, prompt, and `/idea` features remain disabled; their curated data files have
+  been removed.
 - `features.feedback_archive`: translates configured feedback channels and archives them to
   Feishu Bitable.
 - `features.feedback_analysis`: runs the daily SiliconFlow product-feedback analysis and writes
   review candidates to a separate Feishu Bitable table.
-- `data/polls.yaml`, `data/prompts.yaml`, and `data/ideas.yaml`: inspiration content retained for
-  future use.
 
 ## Verification
 

@@ -6,6 +6,14 @@ import discord
 
 LOGGER = logging.getLogger(__name__)
 
+def _is_plain_text_message(message: discord.Message) -> bool:
+    return not (
+        message.attachments
+        or message.embeds
+        or message.stickers
+        or message.poll is not None
+    )
+
 
 class MinimumMessageLength:
     """Remove text messages that are too short in configured channels."""
@@ -20,6 +28,9 @@ class MinimumMessageLength:
             or message.guild is None
             or message.channel.id not in self.channel_ids
         ):
+            return False
+
+        if not _is_plain_text_message(message):
             return False
 
         # Whitespace does not count, so messages such as "hi    " cannot bypass the rule.

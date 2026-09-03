@@ -4,12 +4,23 @@ from unittest.mock import AsyncMock
 from bot.message_length import MinimumMessageLength
 
 
-def message(content: str, channel_id: int = 10) -> SimpleNamespace:
+def message(
+    content: str,
+    channel_id: int = 10,
+    attachments: list[SimpleNamespace] | None = None,
+    embeds: list[SimpleNamespace] | None = None,
+    stickers: list[SimpleNamespace] | None = None,
+    poll: SimpleNamespace | None = None,
+) -> SimpleNamespace:
     author = SimpleNamespace(id=100, bot=False, send=AsyncMock())
     channel = SimpleNamespace(id=channel_id, name="introductions")
     return SimpleNamespace(
         id=1000,
         content=content,
+        attachments=attachments or [],
+        embeds=embeds or [],
+        stickers=stickers or [],
+        poll=poll,
         author=author,
         channel=channel,
         guild=SimpleNamespace(id=1),
@@ -44,3 +55,34 @@ async def test_ignores_unconfigured_channel() -> None:
     assert not await limiter.handle(other)  # type: ignore[arg-type]
 
     other.delete.assert_not_awaited()
+
+
+async def test_any_attachment_bypasses_length_limit() -> None:
+    limiter = MinimumMessageLength((10,))
+    document = SimpleNamespace(content_type="application/pdf", filename="notes.pdf")
+    with_attachment = message("", attachments=[document])
+
+    assert not await limiter.handle(with_attachment)  # type: ignore[arg-type]
+
+    with_attachment.delete.assert_not_awaited()
+
+
+async def test_embed_bypasses_length_limit() -> None:
+    limiter = MinimumMessageLength((10,))
+    with_embed = message("hi", embeds=[SimpleNamespace()])
+
+    assert not await limiter.handle(with_embed)  # type: ignore[arg-type]
+
+    with_embed.delete.assert_not_awaited()
+
+
+async def test_sticker_and_poll_bypass_length_limit() -> None:
+    limiter = MinimumMessageLength((10,))
+    with_sticker = message("", stickers=[SimpleNamespace()])
+    with_poll = message("", poll=SimpleNamespace())
+
+    assert not await limiter.handle(with_sticker)  # type: ignore[arg-type]
+    assert not await limiter.handle(with_poll)  # type: ignore[arg-type]
+
+    with_sticker.delete.assert_not_awaited()
+    with_poll.delete.assert_not_awaited()
