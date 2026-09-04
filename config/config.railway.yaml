@@ -1,14 +1,11 @@
 discord:
   guild_id: 1524016102919635075
   poll_channel_id: 0
-  prompt_channel_id: 0
   invite_code_channel_id: 1528287028205191230
   minimum_message_channel_ids: [1528285430196342804]
 features:
   invite_code_limit: true
   daily_poll: false
-  daily_prompt: false
-  idea: false
   feedback_archive: true
   feedback_analysis: true
   minimum_message_length: true
@@ -61,6 +58,7 @@ feedback_analysis:
   schedule_time: "10:00"
   request_timeout_seconds: 120
   max_images_per_batch: 20
+  alert_after_attempts: 3
   app_token: HBCibNKNTatMPXs1TBUctQlkn7g
   table_id: tblV1OPIbxV3snua
   fields:
@@ -79,11 +77,8 @@ scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"
   poll_weekdays: [wednesday, friday, sunday]
-  prompt_time: "20:00"
   poll_duration_hours: 24
 storage:
   database_path: /data/bot.sqlite3
 content:
   polls_path: data/polls.yaml
-  prompts_path: data/prompts.yaml
-  ideas_path: data/ideas.yaml

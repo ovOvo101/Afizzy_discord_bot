@@ -4,14 +4,13 @@ import logging
 import os
 
 import discord
-from discord import app_commands
 
 from .analysis import FeedbackAnalyzer
 from .config import ConfigError, Settings, load_settings
 from .content import ContentError
 from .database import Database
 from .feedback import FeedbackArchive
-from .inspiration import InspirationFeature
+from .polls import PollFeature
 from .invite_code import InviteCodeLimiter
 from .message_length import MinimumMessageLength
 
@@ -25,7 +24,6 @@ class CreativeBot(discord.Client):
         intents.message_content = True
         super().__init__(intents=intents)
         self.settings, self.database = settings, database
-        self.tree = app_commands.CommandTree(self)
         self.minimum_message_length = (
             MinimumMessageLength(settings.discord.minimum_message_channel_ids)
             if settings.features.minimum_message_length
@@ -36,15 +34,9 @@ class CreativeBot(discord.Client):
             if settings.features.invite_code_limit
             else None
         )
-        self.inspiration = (
-            InspirationFeature(self, self.tree, settings, database)
-            if any(
-                (
-                    settings.features.daily_poll,
-                    settings.features.daily_prompt,
-                    settings.features.idea,
-                )
-            )
+        self.polls = (
+            PollFeature(self, settings, database)
+            if settings.features.daily_poll
             else None
         )
         self.feedback = (
@@ -59,14 +51,8 @@ class CreativeBot(discord.Client):
         )
 
     async def setup_hook(self) -> None:
-        if self.settings.discord.guild_id:
-            guild = discord.Object(id=self.settings.discord.guild_id)
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-        else:
-            await self.tree.sync()
-        if self.inspiration:
-            self.inspiration.start()
+        if self.polls:
+            self.polls.start()
         if self.feedback:
             await self.feedback.start()
         if self.feedback_analysis:
@@ -77,14 +63,12 @@ class CreativeBot(discord.Client):
             return
         if self.invite_code:
             await self.invite_code.handle(message)
-        if self.inspiration:
-            await self.inspiration.on_message(message)
         if self.feedback:
             await self.feedback.on_message(message)
 
     async def close(self) -> None:
-        if self.inspiration:
-            self.inspiration.stop()
+        if self.polls:
+            self.polls.stop()
         if self.feedback:
             await self.feedback.stop()
         if self.feedback_analysis:

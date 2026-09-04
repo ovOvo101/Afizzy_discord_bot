@@ -16,7 +16,6 @@ class ConfigError(ValueError):
 class DiscordConfig:
     guild_id: int | None
     poll_channel_id: int | None
-    prompt_channel_id: int | None
     invite_code_channel_id: int | None
     minimum_message_channel_ids: tuple[int, ...]
 
@@ -26,7 +25,6 @@ class ScheduleConfig:
     timezone: ZoneInfo
     poll_time: str
     poll_weekdays: tuple[int, ...]
-    prompt_time: str
     poll_duration_hours: int
 
 
@@ -34,8 +32,6 @@ class ScheduleConfig:
 class FeatureConfig:
     invite_code_limit: bool
     daily_poll: bool
-    daily_prompt: bool
-    idea: bool
     feedback_archive: bool
     feedback_analysis: bool
     minimum_message_length: bool
@@ -104,6 +100,7 @@ class FeedbackAnalysisConfig:
     fields: dict[str, str]
     request_timeout_seconds: int
     max_images_per_batch: int
+    alert_after_attempts: int
 
 
 @dataclass(frozen=True)
@@ -115,8 +112,6 @@ class Settings:
     feedback_analysis: FeedbackAnalysisConfig
     database_path: Path
     polls_path: Path
-    prompts_path: Path
-    ideas_path: Path
 
 
 def _optional_positive_int(value: object, name: str) -> int | None:
@@ -369,22 +364,30 @@ def load_settings(path: str | Path) -> Settings:
             raise ConfigError("feedback_analysis.fields must map to distinct Feishu columns")
         missing = [
             name
-            for name in ("SILICONFLOW_API_KEY", "SILICONFLOW_MODEL")
+            for name in (
+                "SILICONFLOW_API_KEY",
+                "SILICONFLOW_MODEL",
+                "FEISHU_ALERT_WEBHOOK_URL",
+            )
             if not os.getenv(name)
         ]
         if missing:
             raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
+        if not os.environ["FEISHU_ALERT_WEBHOOK_URL"].startswith("https://"):
+            raise ConfigError("FEISHU_ALERT_WEBHOOK_URL must be an HTTPS URL")
     analysis_timeout = analysis.get("request_timeout_seconds", 120)
     if not isinstance(analysis_timeout, int) or not 10 <= analysis_timeout <= 600:
         raise ConfigError("feedback_analysis.request_timeout_seconds must be between 10 and 600")
     max_images = analysis.get("max_images_per_batch", 20)
     if not isinstance(max_images, int) or not 0 <= max_images <= 100:
         raise ConfigError("feedback_analysis.max_images_per_batch must be between 0 and 100")
+    alert_after_attempts = analysis.get("alert_after_attempts", 3)
+    if not isinstance(alert_after_attempts, int) or not 1 <= alert_after_attempts <= 20:
+        raise ConfigError("feedback_analysis.alert_after_attempts must be between 1 and 20")
     return Settings(
         discord=DiscordConfig(
             _optional_positive_int(discord.get("guild_id"), "guild_id"),
             _optional_positive_int(discord.get("poll_channel_id"), "poll_channel_id"),
-            _optional_positive_int(discord.get("prompt_channel_id"), "prompt_channel_id"),
             _optional_positive_int(
                 discord.get("invite_code_channel_id"), "invite_code_channel_id"
             ),
@@ -397,7 +400,6 @@ def load_settings(path: str | Path) -> Settings:
             timezone,
             _time(scheduling.get("poll_time", "18:00"), "poll_time"),
             _weekdays(scheduling.get("poll_weekdays")),
-            _time(scheduling.get("prompt_time", "20:00"), "prompt_time"),
             duration,
         ),
         features=FeatureConfig(
@@ -405,10 +407,6 @@ def load_settings(path: str | Path) -> Settings:
                 features.get("invite_code_limit"), "features.invite_code_limit", True
             ),
             daily_poll=_boolean(features.get("daily_poll"), "features.daily_poll", False),
-            daily_prompt=_boolean(
-                features.get("daily_prompt"), "features.daily_prompt", False
-            ),
-            idea=_boolean(features.get("idea"), "features.idea", False),
             feedback_archive=feedback_enabled,
             feedback_analysis=analysis_enabled,
             minimum_message_length=_boolean(
@@ -433,9 +431,8 @@ def load_settings(path: str | Path) -> Settings:
             dict(analysis_fields) if isinstance(analysis_fields, dict) else {},
             analysis_timeout,
             max_images,
+            alert_after_attempts,
         ),
         database_path=resolve(storage.get("database_path"), "storage.database_path"),
         polls_path=resolve(content.get("polls_path"), "content.polls_path"),
-        prompts_path=resolve(content.get("prompts_path"), "content.prompts_path"),
-        ideas_path=resolve(content.get("ideas_path"), "content.ideas_path"),
     )

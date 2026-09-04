@@ -33,7 +33,7 @@ discord: {{guild_id: 1}}
 features: {{invite_code_limit: false, feedback_archive: true}}
 scheduling: {{}}
 storage: {{database_path: data/test.sqlite3}}
-content: {{polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}}
+content: {{polls_path: data/polls.yaml}}
 feedback:
   channels:
     - channel_id: 10

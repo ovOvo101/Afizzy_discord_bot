@@ -15,7 +15,7 @@ def test_publications_are_idempotent(tmp_path: Path) -> None:
     database.close()
 
 
-def test_poll_and_metric_tracking(tmp_path: Path) -> None:
+def test_poll_tracking(tmp_path: Path) -> None:
     database = Database(tmp_path / "bot.sqlite3")
     database.initialize()
     now = datetime.now(UTC)
@@ -23,10 +23,29 @@ def test_poll_and_metric_tracking(tmp_path: Path) -> None:
     assert database.ended_polls(now)[0]["message_id"] == 100
     database.mark_poll_summarized(100)
     assert database.ended_polls(now) == []
-    database.increment_metric("2026-08-19", "idea_uses")
-    database.increment_metric("2026-08-19", "idea_uses")
-    value = database.connection.execute("SELECT value FROM metrics").fetchone()["value"]
-    assert value == 2
+    database.close()
+
+
+def test_retired_creative_storage_is_removed(tmp_path: Path) -> None:
+    database = Database(tmp_path / "bot.sqlite3")
+    database.connection.executescript(
+        """
+        CREATE TABLE metrics(day TEXT, metric TEXT, value INTEGER);
+        CREATE TABLE publications(
+          kind TEXT NOT NULL, local_date TEXT NOT NULL, content_id TEXT NOT NULL,
+          message_id INTEGER, channel_id INTEGER, created_at TEXT NOT NULL,
+          PRIMARY KEY(kind, local_date)
+        );
+        INSERT INTO publications VALUES ('prompt', '2026-08-19', 'old', 1, 2, 'now');
+        """
+    )
+    database.initialize()
+    assert database.connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'metrics'"
+    ).fetchone() is None
+    assert database.connection.execute(
+        "SELECT 1 FROM publications WHERE kind = 'prompt'"
+    ).fetchone() is None
     database.close()
 
 

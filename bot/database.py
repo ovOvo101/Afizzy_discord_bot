@@ -22,10 +22,6 @@ class Database:
           message_id INTEGER PRIMARY KEY, channel_id INTEGER NOT NULL, ends_at TEXT NOT NULL,
           summary_posted INTEGER NOT NULL DEFAULT 0
         );
-        CREATE TABLE IF NOT EXISTS metrics (
-          day TEXT NOT NULL, metric TEXT NOT NULL, value INTEGER NOT NULL DEFAULT 0,
-          PRIMARY KEY(day, metric)
-        );
         CREATE TABLE IF NOT EXISTS invite_code_messages (
           guild_id INTEGER NOT NULL, channel_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
           message_id INTEGER NOT NULL, created_at TEXT NOT NULL,
@@ -64,6 +60,7 @@ class Database:
           next_attempt_at TEXT NOT NULL,
           openai_response TEXT,
           last_error TEXT,
+          failure_alerted INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL,
           completed_at TEXT
         );
@@ -95,6 +92,18 @@ class Database:
             self.connection.execute(
                 "ALTER TABLE feedback_tasks ADD COLUMN classification TEXT"
             )
+        analysis_columns = {
+            row["name"]
+            for row in self.connection.execute("PRAGMA table_info(feedback_analysis_runs)")
+        }
+        if "failure_alerted" not in analysis_columns:
+            self.connection.execute(
+                "ALTER TABLE feedback_analysis_runs "
+                "ADD COLUMN failure_alerted INTEGER NOT NULL DEFAULT 0"
+            )
+        # Remove storage owned by the retired prompt and /idea features.
+        self.connection.execute("DROP TABLE IF EXISTS metrics")
+        self.connection.execute("DELETE FROM publications WHERE kind = 'prompt'")
         self.connection.commit()
 
     def claim_analysis_run(self, local_date: str) -> sqlite3.Row | None:
@@ -156,13 +165,30 @@ class Database:
             (run_id,),
         ).fetchall()
 
-    def analysis_history(self) -> list[sqlite3.Row]:
-        return self.connection.execute(
+    def analysis_history_summary(self) -> dict[str, object]:
+        """Return a bounded aggregate instead of every historical analysis item."""
+        total = self.connection.execute(
+            "SELECT COUNT(*) FROM feedback_analysis_items WHERE feishu_record_id IS NOT NULL"
+        ).fetchone()[0]
+        priorities = self.connection.execute(
             """
-            SELECT payload FROM feedback_analysis_items
-            WHERE feishu_record_id IS NOT NULL ORDER BY id
+            SELECT json_extract(payload, '$.priority') AS name, COUNT(*) AS count
+            FROM feedback_analysis_items WHERE feishu_record_id IS NOT NULL
+            GROUP BY name ORDER BY count DESC, name
             """
         ).fetchall()
+        categories = self.connection.execute(
+            """
+            SELECT json_extract(payload, '$.category') AS name, COUNT(*) AS count
+            FROM feedback_analysis_items WHERE feishu_record_id IS NOT NULL
+            GROUP BY name ORDER BY count DESC, name LIMIT 20
+            """
+        ).fetchall()
+        return {
+            "total_items": total,
+            "priority_counts": {row["name"]: row["count"] for row in priorities},
+            "top_category_counts": {row["name"]: row["count"] for row in categories},
+        }
 
     def save_analysis_response(self, run_id: int, response: str, items: list[str]) -> None:
         now = datetime.now(UTC).isoformat()
@@ -232,6 +258,17 @@ class Database:
             SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE id = ?
             """,
             (attempts, next_attempt, error[:1000], run_id),
+        )
+        self.connection.commit()
+
+    def analysis_run(self, run_id: int) -> sqlite3.Row:
+        return self.connection.execute(
+            "SELECT * FROM feedback_analysis_runs WHERE id = ?", (run_id,)
+        ).fetchone()
+
+    def mark_analysis_failure_alerted(self, run_id: int) -> None:
+        self.connection.execute(
+            "UPDATE feedback_analysis_runs SET failure_alerted = 1 WHERE id = ?", (run_id,)
         )
         self.connection.commit()
 
@@ -387,10 +424,6 @@ class Database:
 
     def mark_poll_summarized(self, message_id: int) -> None:
         self.connection.execute("UPDATE polls SET summary_posted = 1 WHERE message_id = ?", (message_id,))
-        self.connection.commit()
-
-    def increment_metric(self, day: str, metric: str) -> None:
-        self.connection.execute("INSERT INTO metrics(day, metric, value) VALUES (?, ?, 1) ON CONFLICT(day, metric) DO UPDATE SET value = value + 1", (day, metric))
         self.connection.commit()
 
     def claim_invite_code_message(

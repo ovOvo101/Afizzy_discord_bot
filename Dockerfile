@@ -10,5 +10,6 @@ COPY bot ./bot
 RUN pip install --no-cache-dir .
 
 COPY config ./config
+COPY data ./data
 
 CMD ["python", "-m", "bot.main"]

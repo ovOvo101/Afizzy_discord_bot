@@ -117,6 +117,7 @@ class FeedbackAnalyzer:
             except Exception as exc:
                 self.database.defer_analysis_run(run["id"], str(exc), datetime.now(UTC))
                 LOGGER.warning("Feedback analysis run %s deferred: %s", run["id"], exc)
+                await self._alert_failure(run["id"], exc)
 
     @process_pending.before_loop
     async def before_process_pending(self) -> None:
@@ -152,7 +153,7 @@ class FeedbackAnalyzer:
     async def _analyze(self, rows: list[Any]) -> tuple[dict[str, Any], str]:
         if self._analysis_session is None:
             raise RuntimeError("SiliconFlow client has not been started")
-        history = [json.loads(row["payload"]) for row in self.database.analysis_history()]
+        history_summary = self.database.analysis_history_summary()
         messages = [
             {
                 "message_id": str(row["message_id"]),
@@ -165,7 +166,7 @@ class FeedbackAnalyzer:
             }
             for row in rows
         ]
-        body = self._request_body(history, messages, await self._image_inputs(rows))
+        body = self._request_body(history_summary, messages, await self._image_inputs(rows))
         try:
             async with self._analysis_session.post(
                 self.settings.feedback_analysis.api_url,
@@ -191,7 +192,7 @@ class FeedbackAnalyzer:
 
     def _request_body(
         self,
-        history: list[dict[str, Any]],
+        history_summary: dict[str, object],
         messages: list[dict[str, Any]],
         images: list[dict[str, Any]],
     ) -> dict[str, Any]:
@@ -200,7 +201,10 @@ class FeedbackAnalyzer:
             {
                 "type": "text",
                 "text": json.dumps(
-                    {"historical_analysis": history, "new_messages": messages},
+                    {
+                        "historical_analysis_summary": history_summary,
+                        "new_messages": messages,
+                    },
                     ensure_ascii=False,
                 ),
             }
@@ -221,6 +225,43 @@ class FeedbackAnalyzer:
                 },
             },
         }
+
+    async def _alert_failure(self, run_id: int, error: Exception) -> None:
+        config = self.settings.feedback_analysis
+        run = self.database.analysis_run(run_id)
+        if (
+            run["failure_alerted"]
+            or run["attempts"] < config.alert_after_attempts
+        ):
+            return
+        try:
+            await self._send_failure_webhook(
+                "⚠️ 每日反馈分析失败\n"
+                f"批次：`{run['local_date']}`（ID `{run_id}`）\n"
+                f"连续失败：`{run['attempts']}` 次\n"
+                f"错误：`{str(error)[:500]}`\n"
+                "系统仍会按退避策略自动重试。"
+            )
+            self.database.mark_analysis_failure_alerted(run_id)
+        except Exception:
+            LOGGER.exception("Could not send failure alert for analysis run %s", run_id)
+
+    async def _send_failure_webhook(self, text: str) -> None:
+        if self._analysis_session is None:
+            raise RuntimeError("Analysis HTTP client has not been started")
+        try:
+            async with self._analysis_session.post(
+                os.environ["FEISHU_ALERT_WEBHOOK_URL"],
+                json={"msg_type": "text", "content": {"text": text}},
+            ) as response:
+                payload = await response.json(content_type=None)
+                code = payload.get("code", payload.get("StatusCode"))
+                if response.status != 200 or code != 0:
+                    raise ApiError(
+                        f"Feishu alert webhook failed with HTTP {response.status}, code {code}"
+                    )
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            raise ApiError(f"Feishu alert webhook failed: {type(exc).__name__}") from exc
 
     @staticmethod
     def _output_text(payload: dict[str, Any]) -> str:

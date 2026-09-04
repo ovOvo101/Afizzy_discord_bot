@@ -1,0 +1,88 @@
+- id: character-becomes-real
+  title: They become real
+  question: Your character suddenly becomes real. What is the first thing you would ask them?
+  options:
+    - Why are you like this?
+    - Do you remember everything?
+    - What do you think of me?
+    - Want to get food?
+- id: ideal-character-energy
+  title: Character energy
+  question: Pick your ideal character energy.
+  options:
+    - Comforting
+    - Chaotic
+    - Cold but secretly soft
+    - Flirty and confident
+- id: story-setting
+  title: Dropped into a story
+  question: You get dropped into a random story. What setting are you hoping for?
+  options:
+    - Fantasy kingdom
+    - College campus
+    - Detective mystery
+    - Cozy little town
+- id: character-who
+  title: Would you rather
+  question: Would you rather have a character who…
+  options:
+    - Always agrees with you
+    - Always challenges you
+    - Roasts you constantly
+    - Somehow knows exactly what to say
+- id: one-superpower
+  title: One superpower
+  question: If you could give a character one superpower, what would you choose?
+  options:
+    - Read minds
+    - Time travel
+    - Teleportation
+    - Control dreams
+- id: dream-world-feature
+  title: Dream world feature
+  question: You can add one feature to your dream fictional world. What is it?
+  options:
+    - Everyone has a soundtrack
+    - Unlimited adventures
+    - Magic is real
+    - Characters never forget you
+- id: survive-character-world
+  title: Survival time
+  question: How long would you survive in your favorite character's world?
+  options:
+    - Five minutes
+    - One day
+    - Maybe a week
+    - I am the main character
+- id: character-red-flag
+  title: Character red flag
+  question: What is the biggest red flag in a fictional character?
+  options:
+    - I can fix them energy
+    - Knows too much
+    - Never explains anything
+    - Says trust me
+- id: keep-talking
+  title: Keep talking
+  question: What makes you want to keep talking to a character?
+  options:
+    - They are funny
+    - They remember little things
+    - Their personality feels real
+    - The story keeps getting better
+- id: instantly-interesting
+  title: Instantly interesting
+  question: What makes a character instantly interesting?
+  options:
+    - A mysterious backstory
+    - Strong personality
+    - Unexpected reactions
+    - Good banter
+- id: more-important
+  title: What matters most
+  question: Which is more important in a character?
+  options:
+    - Personality
+    - Memory
+    - Story
+    - The vibes

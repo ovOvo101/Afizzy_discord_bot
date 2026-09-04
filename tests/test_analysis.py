@@ -34,6 +34,7 @@ def _settings() -> SimpleNamespace:
             app_token="bas1",
             table_id="tbl1",
             fields=FIELDS,
+            alert_after_attempts=3,
         ),
         schedule=SimpleNamespace(timezone=UTC),
     )
@@ -76,7 +77,7 @@ def test_siliconflow_chat_completions_request_format(
     database.initialize()
     analyzer = FeedbackAnalyzer(SimpleNamespace(), _settings(), database)  # type: ignore[arg-type]
     body = analyzer._request_body(
-        [],
+        {"total_items": 0, "priority_counts": {}, "top_category_counts": {}},
         [{"message_id": "100", "original": "hello"}],
         [{"type": "image_url", "image_url": {"url": "https://example.com/a.png"}}],
     )
@@ -88,9 +89,63 @@ def test_siliconflow_chat_completions_request_format(
     assert "例如 fizz" in system_prompt
     assert body["messages"][1]["content"][0]["type"] == "image_url"
     assert body["messages"][1]["content"][-1]["type"] == "text"
+    request_payload = json.loads(body["messages"][1]["content"][-1]["text"])
+    assert "historical_analysis_summary" in request_payload
+    assert "historical_analysis" not in request_payload
     assert body["response_format"]["type"] == "json_schema"
     assert "input" not in body
     assert "text" not in body
+    database.close()
+
+
+def test_history_is_reduced_to_bounded_summary(tmp_path: Path) -> None:
+    database = Database(tmp_path / "bot.sqlite3")
+    database.initialize()
+    now = datetime.now(UTC).isoformat()
+    database.connection.executemany(
+        """
+        INSERT INTO feedback_analysis_items(
+          run_id, item_index, payload, feishu_record_id, created_at
+        ) VALUES (1, ?, ?, ?, ?)
+        """,
+        [
+            (0, json.dumps({"category": "搜索", "priority": "🔴 P1"}), "rec1", now),
+            (1, json.dumps({"category": "搜索", "priority": "🟡 P2"}), "rec2", now),
+            (2, json.dumps({"category": "聊天", "priority": "🟡 P2"}), None, now),
+        ],
+    )
+    database.connection.commit()
+
+    summary = database.analysis_history_summary()
+
+    assert summary == {
+        "total_items": 2,
+        "priority_counts": {"🟡 P2": 1, "🔴 P1": 1},
+        "top_category_counts": {"搜索": 2},
+    }
+    database.close()
+
+
+async def test_failure_alert_is_sent_once_after_threshold(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    database = Database(tmp_path / "bot.sqlite3")
+    database.initialize()
+    run = database.claim_analysis_run("2026-09-04")
+    assert run is not None
+    now = datetime.now(UTC)
+    for _ in range(3):
+        database.defer_analysis_run(run["id"], "upstream unavailable", now)
+    monkeypatch.setenv("FEISHU_ALERT_WEBHOOK_URL", "https://example.com/webhook")  # type: ignore[attr-defined]
+    configured = _settings()
+    analyzer = FeedbackAnalyzer(SimpleNamespace(), configured, database)  # type: ignore[arg-type]
+    analyzer._send_failure_webhook = AsyncMock()  # type: ignore[method-assign]
+
+    await analyzer._alert_failure(run["id"], RuntimeError("upstream unavailable"))
+    await analyzer._alert_failure(run["id"], RuntimeError("upstream unavailable"))
+
+    analyzer._send_failure_webhook.assert_awaited_once()  # type: ignore[union-attr]
+    assert database.analysis_run(run["id"])["failure_alerted"] == 1
     database.close()
 
 

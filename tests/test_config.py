@@ -24,21 +24,20 @@ def test_load_settings_resolves_paths(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     (config_dir / "config.yaml").write_text("""
-discord: {guild_id: 0, poll_channel_id: 1, prompt_channel_id: 2, invite_code_channel_id: 3, minimum_message_channel_ids: [4, 5]}
-features: {invite_code_limit: true, daily_poll: true, daily_prompt: false, idea: false, minimum_message_length: true}
-scheduling: {timezone: Asia/Shanghai, poll_time: '18:00', poll_weekdays: [wednesday, friday, sunday], prompt_time: '20:00', poll_duration_hours: 24}
+discord: {guild_id: 10, poll_channel_id: 1, invite_code_channel_id: 3, minimum_message_channel_ids: [4, 5]}
+features: {invite_code_limit: true, daily_poll: true, minimum_message_length: true}
+scheduling: {timezone: Asia/Shanghai, poll_time: '18:00', poll_weekdays: [wednesday, friday, sunday], poll_duration_hours: 24}
 storage: {database_path: data/test.sqlite3}
-content: {polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}
+content: {polls_path: data/polls.yaml}
 """, encoding="utf-8")
     settings = load_settings(config_dir / "config.yaml")
+    assert settings.discord.guild_id == 10
     assert settings.discord.poll_channel_id == 1
     assert settings.discord.invite_code_channel_id == 3
     assert settings.discord.minimum_message_channel_ids == (4, 5)
     assert settings.features.invite_code_limit
     assert settings.features.daily_poll
     assert settings.schedule.poll_weekdays == (2, 4, 6)
-    assert not settings.features.daily_prompt
-    assert not settings.features.idea
     assert settings.features.minimum_message_length
     assert settings.database_path == tmp_path / "data/test.sqlite3"
 
@@ -57,12 +56,13 @@ def test_analysis_requires_siliconflow_environment(
     monkeypatch.delenv("SILICONFLOW_MODEL", raising=False)  # type: ignore[attr-defined]
     for name in ("DEEPL_API_KEY", "FEISHU_APP_ID", "FEISHU_APP_SECRET"):
         monkeypatch.setenv(name, "test")  # type: ignore[attr-defined]
+    monkeypatch.setenv("FEISHU_ALERT_WEBHOOK_URL", "https://example.com/webhook")  # type: ignore[attr-defined]
     path = tmp_path / "config.yaml"
     path.write_text(
         f"""
 features: {{feedback_archive: true, feedback_analysis: true}}
 storage: {{database_path: data/test.sqlite3}}
-content: {{polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}}
+content: {{polls_path: data/polls.yaml}}
 feedback:
   channels:
     - channel_id: 10
@@ -114,7 +114,7 @@ def test_classified_feedback_channel_configuration(
         """
 features: {feedback_archive: true}
 storage: {database_path: data/test.sqlite3}
-content: {polls_path: data/polls.yaml, prompts_path: data/prompts.yaml, ideas_path: data/ideas.yaml}
+content: {polls_path: data/polls.yaml}
 feedback:
   backfill_days: 7
   classified_channels:

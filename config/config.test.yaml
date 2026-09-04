@@ -1,14 +1,11 @@
 discord:
   guild_id: 1534037288160329819
   poll_channel_id: 0
-  prompt_channel_id: 0
   invite_code_channel_id: 0
   minimum_message_channel_ids: []
 features:
   invite_code_limit: false
   daily_poll: false
-  daily_prompt: false
-  idea: false
   feedback_archive: true
   minimum_message_length: false
 feedback:
@@ -31,11 +28,8 @@ scheduling:
   timezone: Asia/Shanghai
   poll_time: "18:00"
   poll_weekdays: [wednesday, friday, sunday]
-  prompt_time: "20:00"
   poll_duration_hours: 24
 storage:
   database_path: /data/bot.sqlite3
 content:
   polls_path: data/polls.yaml
-  prompts_path: data/prompts.yaml
-  ideas_path: data/ideas.yaml
