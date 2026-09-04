@@ -149,6 +149,26 @@ async def test_failure_alert_is_sent_once_after_threshold(
     database.close()
 
 
+async def test_missing_alert_webhook_does_not_interrupt_retry(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    monkeypatch.delenv("FEISHU_ALERT_WEBHOOK_URL", raising=False)  # type: ignore[attr-defined]
+    database = Database(tmp_path / "bot.sqlite3")
+    database.initialize()
+    run = database.claim_analysis_run("2026-09-05")
+    assert run is not None
+    for _ in range(3):
+        database.defer_analysis_run(run["id"], "upstream unavailable", datetime.now(UTC))
+    analyzer = FeedbackAnalyzer(SimpleNamespace(), _settings(), database)  # type: ignore[arg-type]
+    analyzer._send_failure_webhook = AsyncMock()  # type: ignore[method-assign]
+
+    await analyzer._alert_failure(run["id"], RuntimeError("upstream unavailable"))
+
+    analyzer._send_failure_webhook.assert_not_awaited()  # type: ignore[union-attr]
+    assert database.analysis_run(run["id"])["failure_alerted"] == 0
+    database.close()
+
+
 async def test_analysis_is_saved_before_feishu_write(
     tmp_path: Path, monkeypatch: object
 ) -> None:

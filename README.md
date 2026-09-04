@@ -90,7 +90,7 @@ railway.json          Railway 构建与重启策略
 | `FEISHU_APP_SECRET` | 启用反馈归档 | 飞书自建应用 Secret |
 | `SILICONFLOW_API_KEY` | 启用分类或分析 | SiliconFlow API Key |
 | `SILICONFLOW_MODEL` | 启用分类或分析 | SiliconFlow 模型名称 |
-| `FEISHU_ALERT_WEBHOOK_URL` | 启用每日分析 | 飞书群机器人 Webhook 地址 |
+| `FEISHU_ALERT_WEBHOOK_URL` | 可选 | 飞书群机器人 Webhook 地址；未配置时仅记录失败日志 |
 | `BOT_CONFIG_PATH` | 可选 | 配置路径，默认 `config/config.railway.yaml` |
 | `LOG_LEVEL` | 可选 | 日志级别，默认 `INFO` |
 
@@ -126,7 +126,7 @@ Discord 配置包括目标服务器、投票频道、邀请码频道和最短消
 
 分析任务按照 `scheduling.timezone` 的本地时间运行。首次运行会分析所有已成功归档且从未进入分析批次的消息，之后只处理新增消息。结果统一以 `审核状态=待审核` 写入飞书。
 
-连续失败达到 `alert_after_attempts` 后，Bot 会通过 `FEISHU_ALERT_WEBHOOK_URL` 向飞书群发送一次告警，并继续自动重试。同一分析批次只告警一次，Webhook 地址必须作为 Railway Variable 保存，不应写入 YAML 或提交到 Git。
+如果配置了 `FEISHU_ALERT_WEBHOOK_URL`，连续失败达到 `alert_after_attempts` 后，Bot 会向飞书群发送一次告警，并继续自动重试。同一分析批次只告警一次。未配置 Webhook 时会跳过推送，只记录错误日志，不影响 Bot 启动、每日分析或自动重试。Webhook 地址必须作为 Railway Variable 保存，不应写入 YAML 或提交到 Git。
 
 ## SQLite 持久化与重试
 

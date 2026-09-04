@@ -364,16 +364,13 @@ def load_settings(path: str | Path) -> Settings:
             raise ConfigError("feedback_analysis.fields must map to distinct Feishu columns")
         missing = [
             name
-            for name in (
-                "SILICONFLOW_API_KEY",
-                "SILICONFLOW_MODEL",
-                "FEISHU_ALERT_WEBHOOK_URL",
-            )
+            for name in ("SILICONFLOW_API_KEY", "SILICONFLOW_MODEL")
             if not os.getenv(name)
         ]
         if missing:
             raise ConfigError(f"Missing required environment variables: {', '.join(missing)}")
-        if not os.environ["FEISHU_ALERT_WEBHOOK_URL"].startswith("https://"):
+        alert_webhook_url = os.getenv("FEISHU_ALERT_WEBHOOK_URL")
+        if alert_webhook_url and not alert_webhook_url.startswith("https://"):
             raise ConfigError("FEISHU_ALERT_WEBHOOK_URL must be an HTTPS URL")
     analysis_timeout = analysis.get("request_timeout_seconds", 120)
     if not isinstance(analysis_timeout, int) or not 10 <= analysis_timeout <= 600:

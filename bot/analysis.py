@@ -230,6 +230,8 @@ class FeedbackAnalyzer:
         config = self.settings.feedback_analysis
         run = self.database.analysis_run(run_id)
         if (
+            not os.getenv("FEISHU_ALERT_WEBHOOK_URL")
+            or
             run["failure_alerted"]
             or run["attempts"] < config.alert_after_attempts
         ):

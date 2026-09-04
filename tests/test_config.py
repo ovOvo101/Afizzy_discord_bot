@@ -56,7 +56,6 @@ def test_analysis_requires_siliconflow_environment(
     monkeypatch.delenv("SILICONFLOW_MODEL", raising=False)  # type: ignore[attr-defined]
     for name in ("DEEPL_API_KEY", "FEISHU_APP_ID", "FEISHU_APP_SECRET"):
         monkeypatch.setenv(name, "test")  # type: ignore[attr-defined]
-    monkeypatch.setenv("FEISHU_ALERT_WEBHOOK_URL", "https://example.com/webhook")  # type: ignore[attr-defined]
     path = tmp_path / "config.yaml"
     path.write_text(
         f"""
